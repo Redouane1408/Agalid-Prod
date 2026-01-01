@@ -1,0 +1,39 @@
+name: Prod Deploy
+on:
+  push:
+    branches: [ "main" ]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install client deps
+        run: npm ci
+      - name: Lint client
+        run: npm run lint
+      - name: Typecheck client
+        run: npm run check
+      - name: Build server image
+        run: |
+          cd server
+          npm ci
+          npx prisma generate
+          docker build -t your-registry/agalid-server:latest .
+      - name: Login to registry
+        run: echo "$REGISTRY_TOKEN" | docker login -u "$REGISTRY_USER" --password-stdin
+      - name: Push image
+        run: docker push your-registry/agalid-server:latest
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /opt/agalid/infra
+            docker compose -f docker-compose.prod.yml pull server
+            docker compose -f docker-compose.prod.yml up -d
+

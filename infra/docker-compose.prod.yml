@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: agalid
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: agalid
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  server:
+    image: your-registry/agalid-server:latest
+    environment:
+      DATABASE_URL: postgres://agalid:change_me@postgres:5432/agalid
+      ALLOWED_ORIGIN: https://yourdomain.com
+      PORT: 4000
+    depends_on:
+      - postgres
+    ports:
+      - "4000:4000"
+  proxy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+volumes:
+  pgdata:
+

@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ClientType {
+  Particulier
+  Entreprise
+  Industrie
+  Administration
+}
+
+model ClientRequest {
+  id                 Int         @id @default(autoincrement())
+  createdAt          DateTime    @default(now())
+  name               String
+  email              String
+  phone              String
+  address            String
+  clientType         ClientType
+  monthlyConsumption Int
+  householdSize      Int
+  energyUsagePattern String
+  appliances         String[]
+  roofArea           Int
+  roofType           String
+  location           String
+  peakSunHours       Float
+  hasShading         Boolean
+  budget             Int
+  notes              String?
+  quotes             Quote[]
+}
+
+model Quote {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  requestId  Int
+  request    ClientRequest @relation(fields: [requestId], references: [id])
+  totalMad   Int
+  panelCount Int
+  systemKw   Float
+  status     String
+  sentAt     DateTime?
+}
+
+model OwnerSettings {
+  id                 Int      @id @default(autoincrement())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  services           String[]
+  displayQuoteOnSite Boolean   @default(true)
+  sendEmailQuote     Boolean   @default(true)
+  sendWhatsappQuote  Boolean   @default(true)
+  requiredFields     String[]
+}
+
