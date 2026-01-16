@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,16 +70,47 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
     formState: { errors },
     watch,
     setValue,
-    trigger
+    trigger,
+    getValues
   } = useForm<FormData>({
     resolver: zodResolver(stepSchema[currentStep]),
     mode: 'onChange',
+    shouldUnregister: false,
     defaultValues: {
-      email: 'ricardoxvxv145@gmai.com',
+      name: 'Test User',
+      email: 'ricardoxvxv145@gmail.com',
       phone: '+213674231032',
-      appliances: []
+      address: 'Casablanca',
+      clientType: 'Entreprise',
+      monthlyConsumption: 350,
+      householdSize: 4,
+      energyUsagePattern: 'commercial',
+      appliances: ['Réfrigérateur', 'TV'],
+      roofArea: 60,
+      roofType: 'flat',
+      location: 'Casablanca',
+      peakSunHours: 5.5,
+      hasShading: false,
+      budget: 50000
     }
   });
+  useEffect(() => {
+    register('name');
+    register('email');
+    register('phone');
+    register('address');
+    register('clientType');
+    register('monthlyConsumption');
+    register('householdSize');
+    register('energyUsagePattern');
+    register('appliances');
+    register('roofArea');
+    register('roofType');
+    register('location');
+    register('peakSunHours');
+    register('hasShading');
+    register('budget');
+  }, [register]);
   const formErrors = errors as Record<string, { message?: string }>;
 
   const steps = [
@@ -126,10 +157,11 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
     }
   };
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await onComplete(data);
+      const fullData = getValues() as FormData;
+      await onComplete(fullData);
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {

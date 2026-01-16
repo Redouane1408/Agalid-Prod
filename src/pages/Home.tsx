@@ -2,11 +2,15 @@ import React, { useState, useRef } from 'react';
 import Layout from '@/components/Layout';
 import Hero from '@/components/landing/Hero';
 import PromoSection from '@/components/landing/PromoSection';
+import SmartSolutionsSlider from '@/components/landing/SmartSolutionsSlider';
+import ProcessFlow from '@/components/landing/ProcessFlow';
 import FeatureHighlights from '@/components/landing/FeatureHighlights';
 import BenefitsSection from '@/components/landing/BenefitsSection';
 import GrowthStats from '@/components/landing/GrowthStats';
 import Integrations from '@/components/landing/Integrations';
+import DashboardPreview from '@/components/landing/DashboardPreview';
 import Blog from '@/components/landing/Blog';
+import FAQ from '@/components/landing/FAQ';
 import Testimonials from '@/components/landing/Testimonials';
 import Pricing from '@/components/landing/Pricing';
 import ConsultationForm from '@/components/ConsultationForm';
@@ -41,8 +45,25 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error('Request creation failed', err);
+        alert('La création de la demande a échoué. Veuillez vérifier les champs.');
+        return;
+      }
       const created = await res.json();
+      if (!created?.id) {
+        console.error('Invalid response: missing id', created);
+        alert('Réponse invalide du serveur.');
+        return;
+      }
       const qRes = await fetch(`/api/quotes/${created.id}/create`, { method: 'POST' });
+      if (!qRes.ok) {
+        const qErr = await qRes.text();
+        console.error('Quote creation failed', qErr);
+        alert('La création du devis a échoué.');
+        return;
+      }
       const qData = await qRes.json();
       setQuoteId(qData.id);
     } catch (e) {
@@ -110,12 +131,16 @@ export default function Home() {
     <Layout>
       <Hero onPrimary={handleGetStarted} onSecondary={() => document.querySelector('#pricing')?.scrollIntoView({ behavior: 'smooth' })} />
       <PromoSection />
+      <SmartSolutionsSlider />
+      <ProcessFlow />
       <FeatureHighlights />
       <BenefitsSection />
       <GrowthStats />
       <Integrations />
+      <DashboardPreview />
       <Blog />
       <Testimonials />
+      <FAQ />
       <Pricing />
 
       {/* Calculator Section */}

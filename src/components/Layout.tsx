@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Sun, Moon, Home, Info, FileText, Phone, LogIn } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -80,10 +81,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </motion.button>
                 );
               })}
-              <button className="text-white/80 hover:text-white font-medium flex items-center gap-2">
+              <Link 
+                to="/signin"
+                className="text-white/80 hover:text-white font-medium flex items-center gap-2"
+              >
                 <LogIn className="h-4 w-4" />
                 Sign in
-              </button>
+              </Link>
               <button onClick={() => scrollToSection('#home')} className="bg-[var(--color-secondary)] hover:brightness-110 text-black px-5 py-2 rounded-full font-semibold">
                 Get Started
               </button>
@@ -155,14 +159,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   );
                 })}
                 <div className="flex items-center gap-3 px-3 py-2">
-                  <button className="text-white/80 hover:text-white font-medium flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    Sign in
-                  </button>
-                  <button onClick={toggleTheme} className="p-2 rounded-full border border-white/10 text-white/80 hover:text-white">
-                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  </button>
-                </div>
+                <Link 
+                  to="/signin"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-white/80 hover:text-white font-medium flex items-center gap-2"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign in
+                </Link>
+                <button onClick={toggleTheme} className="p-2 rounded-full border border-white/10 text-white/80 hover:text-white">
+                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+              </div>
               </div>
             </motion.div>
           )}

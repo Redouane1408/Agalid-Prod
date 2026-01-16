@@ -1,4 +1,4 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { CalculatorForm, CalculatorResult, AIRecommendation } from './utils';
@@ -31,6 +31,11 @@ export class AIService {
     calculationResult: CalculatorResult
   ): Promise<AIRecommendation> {
     try {
+      const apiKey = import.meta.env?.VITE_OPENAI_API_KEY as string | undefined;
+      if (!apiKey) {
+        return this.getFallbackRecommendation(formData, calculationResult);
+      }
+      const openai = createOpenAI({ apiKey });
       const prompt = `
         You are a solar energy expert at Agalid, a leading solar energy company in Morocco.
         Based on the following client information, provide a detailed recommendation:
@@ -66,7 +71,7 @@ export class AIService {
       `;
 
       const result = await generateObject({
-        model: openai('gpt-4-turbo'),
+        model: openai('gpt-4o-mini'),
         schema: recommendationSchema,
         prompt,
         temperature: 0.7,
@@ -114,6 +119,16 @@ export class AIService {
     context: { formData?: CalculatorForm; calculationResult?: CalculatorResult }
   ): Promise<string> {
     try {
+      const apiKey = import.meta.env?.VITE_OPENAI_API_KEY as string | undefined;
+      if (!apiKey) {
+        const base =
+          "Je suis un assistant Agalid. Voici une réponse basée sur vos informations: ";
+        const ctx = context.formData
+          ? `Localisation: ${context.formData.location}, Consommation: ${context.formData.monthlyConsumption} kWh, Budget: ${context.formData.budget} MAD. `
+          : '';
+        return `${base}${ctx}Pour un devis précis, une visite technique est recommandée. Notre équipe peut vous accompagner pour choisir panneaux, onduleur et, si nécessaire, batterie.`;
+      }
+      const openai = createOpenAI({ apiKey });
       const prompt = `
         You are a solar energy expert at Agalid, Morocco's leading solar company.
         Answer this client question professionally and accurately:
@@ -133,7 +148,7 @@ export class AIService {
       `;
 
       const result = await generateObject({
-        model: openai('gpt-4-turbo'),
+        model: openai('gpt-4o-mini'),
         schema: z.object({ response: z.string() }),
         prompt,
         temperature: 0.7,

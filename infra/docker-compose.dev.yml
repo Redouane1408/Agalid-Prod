@@ -12,21 +12,31 @@ services:
       - pgdata:/var/lib/postgresql/data
   server:
     build: ../server
-    command: npm run start:dev
+    command: sh -c "npx prisma generate && npm run start:dev"
     environment:
       DATABASE_URL: postgres://agalid:agalid@postgres:5432/agalid
-      ALLOWED_ORIGIN: http://localhost:5173
+      ALLOWED_ORIGIN: http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176
       PORT: 4000
-      SMTP_HOST: smtp.mailtrap.io
-      SMTP_PORT: 587
-      SMTP_USER: ${MAILTRAP_USER}
-      SMTP_PASS: ${MAILTRAP_PASS}
-      EMAIL_FROM: no-reply@agalid.com
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_USER: info@agalid.com
+      SMTP_PASS: ${GMAIL_PASS}
+      EMAIL_FROM: info@agalid.com
       WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
       WHATSAPP_PHONE_ID: ${WHATSAPP_PHONE_ID}
+      SEND_DELIVERY: "false"
     depends_on:
       - postgres
+      - mailhog
     ports:
       - "4000:4000"
+    volumes:
+      - ../server:/app
+      - /app/node_modules
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 volumes:
   pgdata:

@@ -1,11 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import nodemailer from 'nodemailer';
-import axios from 'axios';
+import * as nodemailer from 'nodemailer';
+import { WhatsappService } from './whatsapp.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class QuotesService {
-  constructor(private prisma: PrismaService) {}
+  private log(message: string, data?: unknown) {
+    const logFile = path.join(process.cwd(), 'debug.log');
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${message} ${data ? JSON.stringify(data) : ''}\n`;
+    fs.appendFileSync(logFile, line);
+  }
+
+  constructor(
+    private prisma: PrismaService,
+    private whatsappService: WhatsappService
+  ) {}
 
   private calculate(form: {
     monthlyConsumption: number;
@@ -43,30 +55,50 @@ export class QuotesService {
       where: { id: quoteId },
       include: { request: true },
     });
-    if (!quote) throw new NotFoundException('Quote not found');
+    if (!quote) {
+      return;
+    }
+    const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
+    this.log('Sending email logic triggered', { deliver, quoteId });
+    if (!deliver) {
+      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+      return;
+    }
 
-    const host = process.env.SMTP_HOST;
-    const port = Number(process.env.SMTP_PORT || 587);
+    const host = process.env.SMTP_HOST || 'localhost';
+    const port = Number(process.env.SMTP_PORT || 1025);
+    this.log('SMTP Config', { host, port });
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.EMAIL_FROM || 'no-reply@agalid.com';
-    if (!host) throw new Error('SMTP host missing');
-    const transport = user && pass
-      ? nodemailer.createTransport({ host, port, auth: { user, pass } })
-      : nodemailer.createTransport({ host, port, secure: false });
-    const html = `
-      <h2>Devis Agalid</h2>
-      <p>Bonjour ${quote.request.name},</p>
-      <p>Votre devis est prêt.</p>
-      <ul>
-        <li>Total estimé: ${quote.totalMad} MAD</li>
-        <li>Panneaux: ${quote.panelCount}</li>
-        <li>Puissance système: ${quote.systemKw} kW</li>
-      </ul>
-      <p>Merci,</p>
-    `;
-    await transport.sendMail({ to: quote.request.email, from, subject: 'Votre devis Agalid', html });
-    await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+    const from = process.env.EMAIL_FROM || 'info@agalid.com';
+    try {
+      const transport = user && pass
+        ? nodemailer.createTransport({ host, port, auth: { user, pass } })
+        : nodemailer.createTransport({ host, port, secure: false });
+      
+      this.log('Transport created. Sending mail...');
+      const html = `
+        <h2>Devis Agalid</h2>
+        <p>Bonjour ${quote.request.name},</p>
+        <p>Votre devis est prêt.</p>
+        <ul>
+          <li>Total estimé: ${quote.totalMad} MAD</li>
+          <li>Panneaux: ${quote.panelCount}</li>
+          <li>Puissance système: ${quote.systemKw} kW</li>
+        </ul>
+        <p>Merci,</p>
+      `;
+      await transport.sendMail({ to: quote.request.email, from, subject: 'Votre devis Agalid', html });
+      this.log('Email sent successfully');
+      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        this.log('Email send failed', { message: e.message, stack: e.stack });
+      } else {
+        this.log('Email send failed', { error: e });
+      }
+      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+    }
   }
 
   async sendWhatsApp(quoteId: number) {
@@ -74,25 +106,32 @@ export class QuotesService {
       where: { id: quoteId },
       include: { request: true },
     });
-    if (!quote) throw new NotFoundException('Quote not found');
+    if (!quote) return;
 
-    const token = process.env.WHATSAPP_TOKEN;
-    const phoneId = process.env.WHATSAPP_PHONE_ID;
-    if (!token || !phoneId) {
+    const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
+    this.log('Sending WhatsApp logic triggered', { deliver, quoteId });
+
+    if (!deliver) {
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
       return;
     }
-    const to = quote.request.phone.replace(/\s+/g, '');
 
-    const text = `Devis Agalid\nTotal: ${quote.totalMad} MAD\nPanneaux: ${quote.panelCount}\nPuissance: ${quote.systemKw} kW`;
-    await axios.post(`https://graph.facebook.com/v17.0/${phoneId}/messages`, {
-      messaging_product: 'whatsapp',
-      to,
-      type: 'text',
-      text: { body: text },
-    }, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-    await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+    const to = quote.request.phone;
+    const text = `Bonjour ${quote.request.name},\n\nVotre devis Agalid est prêt.\nTotal: ${quote.totalMad} MAD\nPanneaux: ${quote.panelCount}\nPuissance: ${quote.systemKw} kW\n\nMerci de votre confiance.`;
+    
+    try {
+      this.log('Sending WhatsApp message via WhatsappService...');
+      await this.whatsappService.sendMessage(to, text);
+      
+      this.log('WhatsApp sent successfully');
+      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        this.log('WhatsApp send failed', { message: e.message });
+      } else {
+        this.log('WhatsApp send failed', { error: e });
+      }
+      // Don't fail the request, just log
+    }
   }
 }

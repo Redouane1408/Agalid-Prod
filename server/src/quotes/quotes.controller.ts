@@ -13,13 +13,13 @@ export class QuotesController {
 
   @Post(':id/send-email')
   async sendEmail(@Param('id') id: string) {
-    await this.quotesService.sendEmail(Number(id));
+    this.quotesService.sendEmail(Number(id)).catch(() => {});
     return { ok: true };
   }
 
   @Post(':id/send-whatsapp')
   async sendWhatsapp(@Param('id') id: string) {
-    await this.quotesService.sendWhatsApp(Number(id));
+    this.quotesService.sendWhatsApp(Number(id)).catch(() => {});
     return { ok: true };
   }
 }

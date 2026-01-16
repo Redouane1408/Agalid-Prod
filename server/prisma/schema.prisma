@@ -59,3 +59,31 @@ model OwnerSettings {
   requiredFields     String[]
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER") // ADMIN, USER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  integrations UserIntegration[]
+}
+
+model UserIntegration {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  provider    String   // e.g., "linky", "enphase", "tesla"
+  apiKey      String?  // Legacy or simple API Key
+  accessToken String?  // OAuth Access Token
+  refreshToken String? // OAuth Refresh Token
+  expiresAt   DateTime? // Token expiration
+  isConnected Boolean  @default(false)
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, provider])
+}
+
