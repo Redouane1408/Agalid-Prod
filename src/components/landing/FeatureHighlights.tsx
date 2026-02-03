@@ -28,9 +28,9 @@ export default function FeatureHighlights() {
   ];
 
   return (
-    <section className="bg-[#0d1412] relative overflow-hidden py-24">
+    <section className="bg-white dark:bg-[#0d1412] relative overflow-hidden py-24 transition-colors duration-500">
       {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--color-primary)]/10 blur-[120px] rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--color-primary)]/5 dark:bg-[var(--color-primary)]/10 blur-[120px] rounded-full" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div 
@@ -40,8 +40,8 @@ export default function FeatureHighlights() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Technologie de Pointe</h2>
-          <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">Technologie de Pointe</h2>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">
             Nous utilisons uniquement des composants de tier-1 mondial pour garantir la meilleure performance pour votre investissement.
           </p>
         </motion.div>
@@ -53,13 +53,13 @@ export default function FeatureHighlights() {
               variants={cardHoverVariants} 
               initial="initial" 
               whileHover="hover" 
-              className="rounded-2xl bg-white/5 border border-white/10 p-8 backdrop-blur-sm hover:bg-white/10 transition-colors group"
+              className="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 p-8 backdrop-blur-sm hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group"
             >
               <div className="w-14 h-14 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center mb-6 group-hover:bg-[var(--color-primary)]/20 transition-colors">
                 <feature.icon className="h-7 w-7 text-[var(--color-primary)]" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-              <p className="text-white/60 leading-relaxed text-sm">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{feature.title}</h3>
+              <p className="text-slate-600 dark:text-white/60 leading-relaxed text-sm">
                 {feature.desc}
               </p>
             </motion.div>

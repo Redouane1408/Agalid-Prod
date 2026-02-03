@@ -5,15 +5,15 @@ import { Sun, Leaf, Battery, Wallet, BarChart3, Zap, ShieldCheck, Home } from 'l
 
 export default function PromoSection() {
   const badges = [
-    { label: 'Énergie Verte', color: 'bg-green-100 text-green-700', icon: Leaf },
-    { label: 'Indépendance', color: 'bg-blue-100 text-blue-700', icon: Battery },
-    { label: 'Économie', color: 'bg-yellow-100 text-yellow-700', icon: Wallet },
-    { label: 'Smart Home', color: 'bg-purple-100 text-purple-700', icon: Home },
-    { label: 'Performance', color: 'bg-cyan-100 text-cyan-700', icon: BarChart3 }
+    { label: 'Énergie Verte', color: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400', icon: Leaf },
+    { label: 'Indépendance', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', icon: Battery },
+    { label: 'Économie', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400', icon: Wallet },
+    { label: 'Smart Home', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400', icon: Home },
+    { label: 'Performance', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400', icon: BarChart3 }
   ];
 
   return (
-    <section className="bg-white py-24">
+    <section className="bg-white dark:bg-[#0d1412] py-24 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <span className="text-sm font-semibold text-[var(--color-primary)] tracking-wider uppercase">Pourquoi Choisir Agalid ?</span>
@@ -21,11 +21,11 @@ export default function PromoSection() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <motion.div variants={fadeInVariants} initial="initial" whileInView="animate" viewport={{ once: true }}>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
               L'énergie solaire <br/>
               <span className="text-[var(--color-primary)]">simplifiée pour tous</span>
             </h2>
-            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+            <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
               Passez au solaire sans tracas. Agalid s'occupe de tout : de l'étude de faisabilité à l'installation, en passant par les démarches administratives. Profitez d'une énergie propre et réduisez votre facture dès le premier jour.
             </p>
             
@@ -46,28 +46,28 @@ export default function PromoSection() {
             viewport={{ once: true }} 
             className="grid grid-cols-2 gap-6"
           >
-            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-gray-100 p-8 bg-gradient-to-br from-yellow-50 to-white shadow-lg">
+            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-slate-100 dark:border-white/10 p-8 bg-gradient-to-br from-yellow-50 to-white dark:from-yellow-500/10 dark:to-white/5 shadow-lg">
               <Sun className="h-10 w-10 text-yellow-500 mb-4" />
-              <div className="text-3xl font-bold text-gray-900 mb-1">300+</div>
-              <div className="text-sm text-gray-500 font-medium">Jours d'ensoleillement</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">300+</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Jours d'ensoleillement</div>
             </motion.div>
 
-            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-gray-100 p-8 bg-gradient-to-br from-green-50 to-white shadow-lg mt-8">
+            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-slate-100 dark:border-white/10 p-8 bg-gradient-to-br from-green-50 to-white dark:from-green-500/10 dark:to-white/5 shadow-lg mt-8">
               <Leaf className="h-10 w-10 text-green-500 mb-4" />
-              <div className="text-3xl font-bold text-gray-900 mb-1">-40%</div>
-              <div className="text-sm text-gray-500 font-medium">Réduction Facture</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">-40%</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Réduction Facture</div>
             </motion.div>
 
-            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-gray-100 p-8 bg-gradient-to-br from-blue-50 to-white shadow-lg">
+            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-slate-100 dark:border-white/10 p-8 bg-gradient-to-br from-blue-50 to-white dark:from-blue-500/10 dark:to-white/5 shadow-lg">
               <Zap className="h-10 w-10 text-blue-500 mb-4" />
-              <div className="text-3xl font-bold text-gray-900 mb-1">24h</div>
-              <div className="text-sm text-gray-500 font-medium">Installation Rapide</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">24h</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Installation Rapide</div>
             </motion.div>
 
-            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-gray-100 p-8 bg-gradient-to-br from-purple-50 to-white shadow-lg mt-8">
+            <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="rounded-3xl border border-slate-100 dark:border-white/10 p-8 bg-gradient-to-br from-purple-50 to-white dark:from-purple-500/10 dark:to-white/5 shadow-lg mt-8">
               <ShieldCheck className="h-10 w-10 text-purple-500 mb-4" />
-              <div className="text-3xl font-bold text-gray-900 mb-1">25 Ans</div>
-              <div className="text-sm text-gray-500 font-medium">Garantie Performance</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">25 Ans</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Garantie Performance</div>
             </motion.div>
           </motion.div>
         </div>

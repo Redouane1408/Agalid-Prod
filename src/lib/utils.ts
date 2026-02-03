@@ -81,14 +81,14 @@ export function calculateSolarOutput(form: CalculatorForm): CalculatorResult {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('fr-MA', {
+  return new Intl.NumberFormat('fr-DZ', {
     style: 'currency',
-    currency: 'MAD'
+    currency: 'DZD'
   }).format(amount);
 }
 
 export function formatNumber(num: number): string {
-  return new Intl.NumberFormat('fr-MA').format(num);
+  return new Intl.NumberFormat('fr-DZ').format(num);
 }
 
 export function generateQuoteId(): string {

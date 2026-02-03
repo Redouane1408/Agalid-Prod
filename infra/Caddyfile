@@ -1,9 +1,8 @@
 {
-  email you@example.com
+    email orders@agalid.com
 }
 
-yourdomain.com {
-  reverse_proxy /api/* server:4000
-  reverse_proxy localhost:5173
+agalid.com, www.agalid.com, http://197.201.240.218 {
+    reverse_proxy /api/* server:4000
+    reverse_proxy frontend:80
 }
-

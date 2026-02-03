@@ -87,3 +87,23 @@ model UserIntegration {
   @@unique([userId, provider])
 }
 
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  image       String?
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  stock       Int      @default(0)
+  specs       Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

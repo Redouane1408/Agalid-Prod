@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Home, Info, FileText, Phone, LogIn } from 'lucide-react';
+import { Menu, X, Sun, Moon, Home, Info, FileText, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { slideInVariants, fadeInVariants } from '../lib/animations';
 import { useTheme } from '@/hooks/useTheme';
+import Footer from './Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,269 +12,231 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {};
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navigationItems = [
-    { name: 'home', href: '#home', icon: Home },
-    { name: 'blog', href: '#blog', icon: FileText },
-    { name: 'about us', href: '#about', icon: Info },
-    { name: 'contact', href: '#contact', icon: Phone }
+    { name: 'Accueil', href: '/', icon: Home, type: 'link' },
+    { name: 'Produits', href: '/products', icon: ShoppingBag, type: 'link' },
+    { name: 'À propos', href: '/about', icon: Info, type: 'link' },
+    { name: 'Contact', href: '/#contact', icon: Phone, type: 'hash' }
   ];
 
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const handleNavClick = (item: { href: string; type: string }) => {
+    if (item.type === 'hash') {
+      if (location.pathname !== '/') {
+        navigate(item.href);
+      } else {
+        const element = document.querySelector(item.href.replace('/', ''));
+        if (element) element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate(item.href);
     }
     setIsMenuOpen(false);
   };
 
   return (
-    <div className={cn('min-h-screen', isDark ? 'bg-[var(--color-black)] text-white' : 'bg-white text-gray-900')}>
+    <div className={cn('min-h-screen transition-colors duration-300', isDark ? 'bg-[#0d1412] text-white' : 'bg-slate-50 text-gray-900')}>
       {/* Navigation */}
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          'bg-[#0d1412]/95 backdrop-blur-sm border-b border-white/10'
+          scrolled 
+            ? 'py-3 bg-white/80 dark:bg-[#0d1412]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 shadow-sm' 
+            : 'py-5 bg-transparent'
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center">
             {/* Logo */}
-            <motion.div
-              variants={fadeInVariants}
-              initial="initial"
-              animate="animate"
-              className="flex items-center space-x-2"
+            <div 
+              className="flex items-center gap-2 cursor-pointer group"
+              onClick={() => navigate('/')}
             >
-              <img src="/agalid jdid-13.svg" alt="Agalid" className="h-8 dark:hidden" />
-              <img src="/agalid last version-15.svg" alt="Agalid" className="h-8 hidden dark:block" />
-            </motion.div>
+              <div className="relative">
+                <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <img src="/agalid last version-15.svg" alt="Agalid" className="h-10 relative z-10 dark:hidden" />
+                <img src="/agalid jdid-13.svg" alt="Agalid" className="h-10 relative z-10 hidden dark:block" />
+              </div>
+            </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item, index) => {
+            <div className="hidden md:flex items-center gap-1 bg-white/50 dark:bg-white/5 backdrop-blur-sm px-2 py-1.5 rounded-full border border-slate-200/50 dark:border-white/5 shadow-sm">
+              {navigationItems.map((item) => {
+                const isActive = location.pathname === item.href || (item.type === 'hash' && location.hash === item.href.replace('/', ''));
                 const Icon = item.icon;
+                
                 return (
-                  <motion.button
+                  <button
                     key={item.name}
-                    variants={slideInVariants}
-                    initial="initial"
-                    animate="animate"
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => scrollToSection(item.href)}
-                    className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors font-medium"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleNavClick(item)}
+                    className={cn(
+                      "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2",
+                      isActive 
+                        ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" 
+                        : "text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-white/5"
+                    )}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </motion.button>
+                    <Icon className={cn("w-4 h-4", isActive && "stroke-[2.5px]")} />
+                    {item.name}
+                  </button>
                 );
               })}
+            </div>
+
+            {/* Right Actions */}
+            <div className="hidden md:flex items-center gap-3">
+              <button 
+                onClick={toggleTheme}
+                className="p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+              >
+                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+
+              <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
+
               <Link 
                 to="/signin"
-                className="text-white/80 hover:text-white font-medium flex items-center gap-2"
+                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors px-2"
               >
-                <LogIn className="h-4 w-4" />
-                Sign in
+                Connexion
               </Link>
-              <button onClick={() => scrollToSection('#home')} className="bg-[var(--color-secondary)] hover:brightness-110 text-black px-5 py-2 rounded-full font-semibold">
-                Get Started
-              </button>
-              <button onClick={toggleTheme} className="p-2 rounded-full border border-white/10 text-white/80 hover:text-white">
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+
+              <button 
+                onClick={() => {
+                  if (location.pathname !== '/') navigate('/');
+                  setTimeout(() => document.querySelector('#calculator')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }} 
+                className="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-medium text-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative z-10 flex items-center gap-2">
+                  Devis Gratuit
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </span>
               </button>
             </div>
 
             {/* Mobile menu button */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 rounded-md text-white hover:bg-white/10 transition-colors"
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white"
             >
-              <AnimatePresence mode="wait">
-                {isMenuOpen ? (
-                  <motion.div
-                    key="close"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <X className="h-6 w-6" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="menu"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Menu className="h-6 w-6" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="md:hidden bg-[#0d1412]/95 backdrop-blur-lg border-t border-white/10"
-            >
-              <div className="px-4 pt-2 pb-3 space-y-1">
-                {navigationItems.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <motion.button
-                      key={item.name}
-                      initial={{ x: -50, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: index * 0.1 }}
-                      onClick={() => scrollToSection(item.href)}
-                      className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
-                      whileHover={{ x: 5 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.name}</span>
-                    </motion.button>
-                  );
-                })}
-                <div className="flex items-center gap-3 px-3 py-2">
-                <Link 
-                  to="/signin"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                  }}
-                  className="text-white/80 hover:text-white font-medium flex items-center gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Sign in
-                </Link>
-                <button onClick={toggleTheme} className="p-2 rounded-full border border-white/10 text-white/80 hover:text-white">
-                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                </button>
-              </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.nav>
 
-      {/* Main Content */}
-      <main className="pt-16">
+      {/* Mobile Navigation Drawer */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#0d1412] z-50 md:hidden shadow-2xl border-l border-slate-200 dark:border-white/10"
+            >
+              <div className="flex flex-col h-full p-6">
+                <div className="flex justify-between items-center mb-8">
+                  <span className="text-lg font-bold text-slate-900 dark:text-white">Menu</span>
+                  <button 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {navigationItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <button
+                        key={item.name}
+                        onClick={() => handleNavClick(item)}
+                        className={cn(
+                          "w-full flex items-center justify-between p-4 rounded-xl transition-all",
+                          isActive
+                            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-5 w-5" />
+                          <span className="font-medium">{item.name}</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 opacity-50" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-auto space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
+                  <div className="flex items-center justify-between px-2">
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Apparence</span>
+                    <button 
+                      onClick={toggleTheme}
+                      className="p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white"
+                    >
+                      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  
+                  <Link 
+                    to="/signin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full p-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Connexion
+                  </Link>
+
+                  <button 
+                    onClick={() => {
+                      if (location.pathname !== '/') navigate('/');
+                      setTimeout(() => document.querySelector('#calculator')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                      setIsMenuOpen(false);
+                    }} 
+                    className="w-full py-3 rounded-xl bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
+                  >
+                    Devis Gratuit
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <main>
         {children}
       </main>
-
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        viewport={{ once: true }}
-        className="bg-[var(--color-black)] text-white"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-            >
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="bg-[var(--color-primary)] p-2 rounded-full">
-                  <Sun className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">Agalid</span>
-              </div>
-              <p className="text-white/60 text-sm">
-                Votre partenaire de confiance pour l'énergie solaire au Maroc. 
-                Des solutions sur mesure pour un avenir durable.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-            >
-              <h3 className="font-semibold mb-4">Services</h3>
-              <ul className="space-y-2 text-white/60 text-sm">
-                <li>Installation Résidentielle</li>
-                <li>Solutions Commerciales</li>
-                <li>Maintenance & Support</li>
-                <li>Financement</li>
-              </ul>
-            </motion.div>
-
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              <h3 className="font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2 text-white/60 text-sm">
-                <li>Casablanca, Maroc</li>
-                <li>+212 522 123 456</li>
-                <li>contact@agalid.com</li>
-                <li>Lun-Ven: 8h-18h</li>
-              </ul>
-            </motion.div>
-
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true }}
-            >
-              <h3 className="font-semibold mb-4">Suivez-nous</h3>
-              <div className="flex space-x-4">
-                {['Facebook', 'LinkedIn', 'Instagram'].map((social) => (
-                  <motion.div
-                    key={social}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-[var(--color-primary)] transition-colors"
-                  >
-                    <span className="text-xs font-semibold">{social[0]}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="border-t border-white/10 mt-8 pt-8 text-center text-white/60 text-sm"
-          >
-            <p>&copy; 2024 Agalid Énergie Solaire. Tous droits réservés.</p>
-          </motion.div>
-        </div>
-      </motion.footer>
+      <Footer />
     </div>
   );
 };

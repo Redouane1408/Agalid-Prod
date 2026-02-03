@@ -38,6 +38,21 @@ export class EnphaseService {
     }
   }
 
+  async getSystems(apiKey: string) {
+    try {
+      if (apiKey && !apiKey.startsWith('test_')) {
+        const response = await axios.get(`${this.API_URL}/systems`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          params: { key: process.env.ENPHASE_API_KEY } 
+        });
+        return response.data.systems;
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch Enphase systems: ${error.message}`);
+    }
+    return [{ system_id: 'demo_system', system_name: 'Demo System' }];
+  }
+
   async getProduction(systemId: string, apiKey: string) {
     // 1. Try Real API (Free Tier: Watt Plan - 1000 hits/month)
     try {
@@ -56,6 +71,23 @@ export class EnphaseService {
     // 2. Fallback to Simulation (Free Mode / Demo)
     // This ensures the user never pays and the app always looks good.
     return this.generateSimulatedData();
+  }
+
+  async getDailyHistory(systemId: string, apiKey: string) {
+    try {
+      if (apiKey && !apiKey.startsWith('test_')) {
+        // Enphase API v4 telemetry endpoint returns recent 5-min intervals
+        // We might need start_at parameter for full day, but let's try default first
+        const response = await axios.get(`${this.API_URL}/systems/${systemId}/telemetry/production_micro`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          params: { key: process.env.ENPHASE_API_KEY }
+        });
+        return response.data; // Should be array of intervals
+      }
+    } catch (error) {
+      this.logger.warn(`Enphase history fetch failed: ${error.message}`);
+    }
+    return null; // Return null to fallback to weather estimation
   }
 
   private generateSimulatedData() {

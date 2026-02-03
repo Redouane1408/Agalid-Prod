@@ -62,9 +62,9 @@ export class AIService {
         1. Best panel model for this client's needs
         2. Optimal inverter type and size
         3. Battery storage recommendation (if applicable)
-        4. Installation considerations specific to Morocco
+        4. Installation considerations specific to Algeria
         5. Maintenance schedule
-        6. Available government incentives in Morocco
+        6. Available government incentives in Algeria
         7. Financing options available
         
         Be professional, detailed, and provide actionable advice.
@@ -130,21 +130,16 @@ export class AIService {
       }
       const openai = createOpenAI({ apiKey });
       const prompt = `
-        You are a solar energy expert at Agalid, Morocco's leading solar company.
-        Answer this client question professionally and accurately:
+        Context: You are an expert solar energy consultant for Agalid, a leading solar installation company in Algeria.
+        User Question: "${question}"
         
-        Question: ${question}
+        Client Data (if available):
+        ${context.formData ? JSON.stringify(context.formData) : 'Not provided'}
         
-        ${context.formData ? `Client Context:
-        - Location: ${context.formData.location}
-        - Monthly Consumption: ${context.formData.monthlyConsumption} kWh
-        - Budget: ${context.formData.budget} MAD
-        - System Size: ${context.calculationResult?.panelCount} panels
-        ` : ''}
+        Calculation Results (if available):
+        ${context.calculationResult ? JSON.stringify(context.calculationResult) : 'Not provided'}
         
-        Provide a clear, helpful response in French or Arabic as appropriate for Moroccan clients.
-        If the question is about pricing, mention that final quotes require a site visit.
-        If technical, provide specific details about Agalid's solutions.
+        Provide a clear, helpful response in French or Arabic as appropriate for Algerian clients.
       `;
 
       const result = await generateObject({

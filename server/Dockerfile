@@ -1,6 +1,5 @@
 FROM node:18
 WORKDIR /app
-
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
@@ -10,9 +9,13 @@ RUN npm ci
 # App source
 COPY . .
 
+
 # Generate Prisma client
 RUN npx prisma generate
 
+# Build the application
+RUN npm run build
+
 EXPOSE 4000
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start"]
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeInVariants } from '@/lib/animations';
-import { Zap, Sun, Battery, Cpu, Cloud, Wifi, Check, AlertCircle } from 'lucide-react';
+import { Zap, Sun, Battery, Cpu, Cloud, Wifi, Check, AlertCircle, LayoutDashboard } from 'lucide-react';
 import ConnectModal from './ConnectModal';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ interface IntegrationItem {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   id: string;
+  description: string;
 }
 
 export default function Integrations() {
@@ -19,10 +20,10 @@ export default function Integrations() {
   const [showAuthToast, setShowAuthToast] = useState(false);
 
   const integrations: IntegrationItem[] = [
-    { name: 'Linky', icon: Zap, color: '#A4D037', id: 'linky' },
-    { name: 'Enphase', icon: Sun, color: '#F37021', id: 'enphase' },
-    { name: 'Tesla', icon: Battery, color: '#E31937', id: 'tesla' },
-    { name: 'OpenMeteo', icon: Cloud, color: '#1D4E89', id: 'meteo' },
+    { name: 'Linky', icon: Zap, color: '#A4D037', id: 'linky', description: 'Suivi de consommation réel' },
+    { name: 'Enphase', icon: Sun, color: '#F37021', id: 'enphase', description: 'Production solaire en direct' },
+    { name: 'Tesla', icon: Battery, color: '#E31937', id: 'tesla', description: 'État de la batterie' },
+    { name: 'OpenMeteo', icon: Cloud, color: '#1D4E89', id: 'meteo', description: 'Prévisions d\'ensoleillement' },
   ];
 
   // Check for connected services on load
@@ -80,7 +81,7 @@ export default function Integrations() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        navigate('/signin');
+        navigate('/signin?from=integrations');
         return;
       }
 
@@ -120,12 +121,12 @@ export default function Integrations() {
         navigate('/dashboard');
       }
     } else {
-      navigate('/signup');
+      navigate('/signup?from=integrations');
     }
   };
 
   return (
-    <section className="bg-[#050b09] py-24 relative overflow-hidden" id="integrations">
+    <section className="bg-white dark:bg-[#050b09] py-24 relative overflow-hidden transition-colors duration-500" id="integrations">
       <ConnectModal 
         isOpen={!!selectedIntegration} 
         onClose={() => setSelectedIntegration(null)}
@@ -148,7 +149,7 @@ export default function Integrations() {
               <div className="text-sm opacity-90">Veuillez vous connecter pour gérer vos intégrations.</div>
             </div>
             <button 
-              onClick={() => navigate('/signin')}
+              onClick={() => navigate('/signin?from=integrations')}
               className="ml-4 bg-white text-red-500 px-3 py-1 rounded-lg text-sm font-bold hover:bg-gray-100 transition-colors"
             >
               Se connecter
@@ -172,30 +173,30 @@ export default function Integrations() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium mb-6">
             <Cpu className="w-4 h-4" />
             <span>Connectivité Intelligente</span>
           </div>
           
-          <h3 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          <h3 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
             L'écosystème <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">connecté</span>
           </h3>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 dark:text-gray-400 max-w-2xl mx-auto">
             Ne jonglez plus entre vos applications. Agalid centralise Linky, vos panneaux solaires et votre batterie pour automatiser vos économies d'énergie.
           </p>
         </motion.div>
 
         <div className="relative mt-20 h-[500px] flex items-center justify-center">
           {/* Orbit Circles */}
-          <div className="absolute border border-white/5 rounded-full w-[300px] h-[300px] animate-spin-slow" />
-          <div className="absolute border border-white/5 rounded-full w-[450px] h-[450px] animate-reverse-spin-slower" />
+          <div className="absolute border border-slate-200 dark:border-white/5 rounded-full w-[300px] h-[300px] animate-spin-slow" />
+          <div className="absolute border border-slate-200 dark:border-white/5 rounded-full w-[450px] h-[450px] animate-reverse-spin-slower" />
           
           {/* Center Hub */}
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="relative z-20 w-32 h-32 rounded-full bg-[#050b09] border border-emerald-500/30 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.2)]"
+            className="relative z-20 w-32 h-32 rounded-full bg-white dark:bg-[#050b09] border border-emerald-500/30 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.2)]"
           >
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 animate-pulse" />
             <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
@@ -237,17 +238,17 @@ export default function Integrations() {
                   className="relative group cursor-pointer"
                   onClick={() => handleIntegrationClick(integration)}
                 >
-                  <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-300 ${isConnected ? 'bg-emerald-500/30' : 'bg-white/5 group-hover:bg-white/10'}`} />
+                  <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-300 ${isConnected ? 'bg-emerald-500/30' : 'bg-slate-200/50 dark:bg-white/5 group-hover:bg-slate-300/50 dark:group-hover:bg-white/10'}`} />
                   
-                  <div className={`w-16 h-16 rounded-full bg-[#0A1210] border flex items-center justify-center relative overflow-hidden transition-all duration-300 ${isConnected ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'border-white/10 group-hover:border-emerald-500/50'}`}>
+                  <div className={`w-16 h-16 rounded-full bg-white dark:bg-[#0A1210] border flex items-center justify-center relative overflow-hidden transition-all duration-300 ${isConnected ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'border-slate-200 dark:border-white/10 group-hover:border-emerald-500/50'}`}>
                     
                     {isConnected && (
                       <div className="absolute top-0 right-0 p-1 bg-emerald-500 rounded-bl-lg z-10">
-                        <Check className="w-2 h-2 text-black" strokeWidth={4} />
+                        <Check className="w-2 h-2 text-white dark:text-black" strokeWidth={4} />
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100/50 dark:from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <integration.icon 
                       className="w-6 h-6 transition-transform duration-300 group-hover:scale-110" 
                       style={{ color: isConnected ? '#10b981' : integration.color }} 
@@ -256,8 +257,8 @@ export default function Integrations() {
                   
                   {/* Tooltip */}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-30">
-                    <div className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg text-sm text-white whitespace-nowrap shadow-xl">
-                      {isConnected ? 'Données synchronisées' : `Ajouter ${integration.name}`}
+                    <div className="bg-slate-900 dark:bg-white/10 backdrop-blur-md border border-slate-700 dark:border-white/10 px-3 py-1.5 rounded-lg text-sm text-white whitespace-nowrap shadow-xl">
+                      {isConnected ? 'Données synchronisées' : integration.description}
                     </div>
                   </div>
                 </div>
@@ -267,13 +268,23 @@ export default function Integrations() {
         </div>
         
         {/* Bottom CTA */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+            {connectedServices.length > 0 && (
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className="px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold hover:from-emerald-600 hover:to-cyan-600 transition-all shadow-lg hover:shadow-emerald-500/20 flex items-center gap-2 group"
+              >
+                  <LayoutDashboard className="w-5 h-5" />
+                  Voir mes résultats
+              </button>
+            )}
+
             <button 
               onClick={handleMainCta}
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold hover:from-emerald-600 hover:to-cyan-600 transition-all shadow-lg hover:shadow-emerald-500/20 flex items-center gap-2 mx-auto group"
+              className={`px-8 py-4 rounded-xl font-semibold transition-all flex items-center gap-2 group ${connectedServices.length > 0 ? 'bg-white dark:bg-white/5 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10' : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-600 hover:to-cyan-600 shadow-lg hover:shadow-emerald-500/20'}`}
             >
                 <Wifi className="w-5 h-5" />
-                Connecter mon installation
+                {connectedServices.length > 0 ? 'Connecter un autre service' : 'Connecter mon installation'}
             </button>
         </div>
       </div>

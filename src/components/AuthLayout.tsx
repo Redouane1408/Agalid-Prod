@@ -27,15 +27,15 @@ export default function AuthLayout() {
   const currentConfig = config[location.pathname as keyof typeof config] || config['/signin'];
 
   return (
-    <div className="h-screen w-full bg-[#050b09] text-white overflow-hidden font-sans relative">
+    <div className="h-screen w-full bg-slate-50 dark:bg-[#050b09] text-slate-900 dark:text-white overflow-hidden font-sans relative transition-colors duration-500">
       <AnimatedBackground />
 
       {/* Back to Home Button */}
       <Link 
         to="/" 
-        className="absolute top-8 left-8 z-50 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+        className="absolute top-8 left-8 z-50 p-2 rounded-full bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-colors group shadow-sm dark:shadow-none"
       >
-        <ArrowLeft className="w-6 h-6 text-white/70 group-hover:text-white transition-colors" />
+        <ArrowLeft className="w-6 h-6 text-slate-600 dark:text-white/70 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
       </Link>
 
       <div className="w-full h-full relative z-10 flex">
@@ -65,8 +65,8 @@ export default function AuthLayout() {
                    transition={{ duration: 0.5 }}
                  />
                </AnimatePresence>
-               <div className="absolute inset-0 bg-gradient-to-t from-[#050b09] via-[#050b09]/20 to-transparent pointer-events-none" />
-               <div className="absolute inset-0 bg-[#050b09]/10 pointer-events-none" />
+               <div className="absolute inset-0 bg-gradient-to-t from-slate-900 dark:from-[#050b09] via-slate-900/20 dark:via-[#050b09]/20 to-transparent pointer-events-none" />
+               <div className="absolute inset-0 bg-slate-900/10 dark:bg-[#050b09]/10 pointer-events-none" />
             </div>
 
             {/* Image Text Overlay */}
@@ -80,7 +80,7 @@ export default function AuthLayout() {
                 <h2 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
                   {currentConfig.imageTitle}
                 </h2>
-                <p className="text-lg text-gray-300 max-w-md">
+                <p className="text-lg text-gray-100 dark:text-gray-300 max-w-md">
                   {currentConfig.imageSubtitle}
                 </p>
               </motion.div>
@@ -94,7 +94,7 @@ export default function AuthLayout() {
               x: isSignIn ? '100%' : '0%' 
             }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="absolute top-0 left-0 w-1/2 h-full flex items-center justify-center bg-[#050b09]/60 backdrop-blur-xl z-10"
+            className="absolute top-0 left-0 w-1/2 h-full flex items-center justify-center bg-white/60 dark:bg-[#050b09]/60 backdrop-blur-xl z-10"
           >
             <div className="w-full max-w-md p-12">
               <motion.div
@@ -104,8 +104,8 @@ export default function AuthLayout() {
                 transition={{ delay: 0.1, duration: 0.3 }}
                 className="mb-8"
               >
-                <h1 className="text-3xl font-bold text-white mb-2">{currentConfig.formTitle}</h1>
-                <p className="text-gray-400">{currentConfig.formSubtitle}</p>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{currentConfig.formTitle}</h1>
+                <p className="text-slate-500 dark:text-gray-400">{currentConfig.formSubtitle}</p>
               </motion.div>
               
               {/* Render the actual page content (Form) here */}
@@ -117,10 +117,10 @@ export default function AuthLayout() {
 
         {/* Mobile Layout (Stacked, no sliding) */}
         <div className="lg:hidden w-full h-full flex items-center justify-center p-4 relative z-20">
-           <div className="w-full max-w-md bg-[#050b09]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
+           <div className="w-full max-w-md bg-white/90 dark:bg-[#050b09]/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-2xl">
              <div className="mb-6 text-center">
-                <h1 className="text-2xl font-bold text-white mb-2">{currentConfig.formTitle}</h1>
-                <p className="text-gray-400 text-sm">{currentConfig.formSubtitle}</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{currentConfig.formTitle}</h1>
+                <p className="text-slate-500 dark:text-gray-400 text-sm">{currentConfig.formSubtitle}</p>
              </div>
              <Outlet />
            </div>

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UsersModule,
     IntegrationsModule,
     DashboardModule,
+    ProductsModule,
   ],
   providers: [PrismaService],
 })

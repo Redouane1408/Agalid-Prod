@@ -30,7 +30,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="bg-white py-24 relative overflow-hidden">
+    <section className="bg-white dark:bg-[#0d1412] py-24 relative overflow-hidden transition-colors duration-500">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div 
           variants={fadeInVariants} 
@@ -39,15 +39,15 @@ export default function FAQ() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-6">
             <HelpCircle className="w-4 h-4" />
             <span>Support & Questions</span>
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Questions <span className="text-emerald-600">Fréquentes</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
+            Questions <span className="text-emerald-600 dark:text-emerald-400">Fréquentes</span>
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-slate-600 dark:text-slate-400">
             Tout ce que vous devez savoir pour passer au solaire en toute confiance.
           </p>
         </motion.div>
@@ -60,16 +60,16 @@ export default function FAQ() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="border border-gray-200 rounded-2xl overflow-hidden bg-gray-50/50 hover:bg-white transition-colors duration-300"
+              className="border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden bg-slate-50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 transition-colors duration-300"
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                 className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
               >
-                <span className={`text-lg font-semibold transition-colors ${openIndex === index ? 'text-emerald-600' : 'text-gray-900'}`}>
+                <span className={`text-lg font-semibold transition-colors ${openIndex === index ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
                   {faq.question}
                 </span>
-                <span className={`p-2 rounded-full transition-colors ${openIndex === index ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                <span className={`p-2 rounded-full transition-colors ${openIndex === index ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500'}`}>
                   {openIndex === index ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                 </span>
               </button>
@@ -82,7 +82,7 @@ export default function FAQ() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
-                    <div className="px-6 pb-6 pt-0 text-gray-600 leading-relaxed">
+                    <div className="px-6 pb-6 pt-0 text-slate-600 dark:text-slate-400 leading-relaxed">
                       {faq.answer}
                     </div>
                   </motion.div>

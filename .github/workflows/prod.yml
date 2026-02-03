@@ -1,9 +1,11 @@
-name: Prod Deploy
+name: Production Deployment
+
 on:
   push:
     branches: [ "main" ]
+
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,24 +18,52 @@ jobs:
         run: npm run lint
       - name: Typecheck client
         run: npm run check
-      - name: Build server image
+      - name: Build server image (validation only)
         run: |
           cd server
           npm ci
           npx prisma generate
-          docker build -t your-registry/agalid-server:latest .
-      - name: Login to registry
-        run: echo "$REGISTRY_TOKEN" | docker login -u "$REGISTRY_USER" --password-stdin
-      - name: Push image
-        run: docker push your-registry/agalid-server:latest
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /opt/agalid/infra
-            docker compose -f docker-compose.prod.yml pull server
-            docker compose -f docker-compose.prod.yml up -d
+          docker build -t agalid-server:latest .
 
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            # Stop script on error
+            set -e
+            
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory (Create if needed, though manual clone is recommended first)
+            mkdir -p ~/agalid
+            cd ~/agalid
+            
+            # Pull latest changes
+            echo "📥 Pulling latest code..."
+            # If not a git repo, warn user (or try to clone if we had auth, but we assume manual setup first)
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              echo "❌ Error: ~/agalid is not a git repository. Please clone the repo on the server first."
+              exit 1
+            fi
+
+            # Inject Production Environment Variables
+            echo "🔑 Injecting secrets..."
+            echo "${{ secrets.PROD_ENV_FILE }}" > .env
+
+            # Run Deployment Script
+            echo "🏗️ Running infra/deploy.sh..."
+            chmod +x infra/deploy.sh
+            bash infra/deploy.sh
+            
+            echo "✅ Deployment successful!"

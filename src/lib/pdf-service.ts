@@ -152,8 +152,8 @@ export class PDFService {
     // Footer
     pdf.setFontSize(10);
     pdf.setTextColor(100);
-    pdf.text('Agalid Énergie Solaire - Casablanca, Maroc', 20, 280);
-    pdf.text('Email: contact@agalid.com | Téléphone: +212 522 123 456', 20, 288);
+    pdf.text('Agalid Énergie Solaire - Alger, Algérie', 20, 280);
+    pdf.text('Email: contact@agalid.com | Téléphone: +213 21 123 456', 20, 288);
     pdf.text('www.agalid.com', 20, 296);
     
     return pdf.output('blob');

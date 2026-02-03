@@ -9,10 +9,10 @@ import {
   Tooltip, 
   ResponsiveContainer
 } from 'recharts';
-import { Zap, Sun, Battery, ArrowUpRight, ArrowDownRight, TrendingUp, Loader2 } from 'lucide-react';
+import { Zap, Sun, Battery, ArrowUpRight, ArrowDownRight, TrendingUp, Loader2, CloudSun } from 'lucide-react';
 import axios from 'axios';
 
-type ColorVariantKey = 'amber' | 'blue' | 'emerald' | 'purple';
+type ColorVariantKey = 'amber' | 'blue' | 'emerald' | 'purple' | 'cyan';
 
 interface StatBlock {
   value: number;
@@ -40,11 +40,17 @@ interface EnergyMix {
   battery: number;
 }
 
+interface WeatherForecast {
+  time: string;
+  irradiance: number;
+}
+
 const colorVariants: Record<ColorVariantKey, { bg: string; text: string; icon: string }> = {
   amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', icon: 'text-amber-400' },
   blue: { bg: 'bg-blue-500/10', text: 'text-blue-400', icon: 'text-blue-400' },
   emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', icon: 'text-emerald-400' },
   purple: { bg: 'bg-purple-500/10', text: 'text-purple-400', icon: 'text-purple-400' },
+  cyan: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', icon: 'text-cyan-400' },
 };
 
 interface StatCardProps {
@@ -91,6 +97,7 @@ export default function DashboardHome() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [productionData, setProductionData] = useState<ProductionPoint[]>([]);
   const [energyMix, setEnergyMix] = useState<EnergyMix | null>(null);
+  const [weather, setWeather] = useState<WeatherForecast[] | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,15 +107,17 @@ export default function DashboardHome() {
           headers: { Authorization: `Bearer ${token}` }
         };
 
-        const [statsRes, historyRes, mixRes] = await Promise.all([
+        const [statsRes, historyRes, mixRes, weatherRes] = await Promise.all([
           axios.get<DashboardStats>('/api/dashboard/stats', config),
           axios.get<ProductionPoint[]>('/api/dashboard/production', config),
-          axios.get<EnergyMix>('/api/dashboard/mix', config)
+          axios.get<EnergyMix>('/api/dashboard/mix', config),
+          axios.get<WeatherForecast[]>('/api/dashboard/weather', config)
         ]);
 
         setStats(statsRes.data);
         setProductionData(historyRes.data);
         setEnergyMix(mixRes.data);
+        setWeather(weatherRes.data);
       } catch (error: unknown) {
         console.error('Error fetching dashboard data:', error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -136,16 +145,16 @@ export default function DashboardHome() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Vue d'ensemble</h1>
-          <p className="text-gray-400">Bienvenue sur votre tableau de bord énergétique</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Vue d'ensemble</h1>
+          <p className="text-slate-500 dark:text-gray-400">Bienvenue sur votre tableau de bord énergétique</p>
         </div>
         <div className="flex items-center gap-3">
-          <select className="bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+          <select className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
             <option>Aujourd'hui</option>
             <option>Cette semaine</option>
             <option>Ce mois</option>
           </select>
-          <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+          <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20">
             <TrendingUp className="w-4 h-4" />
             Rapport complet
           </button>
@@ -190,21 +199,51 @@ export default function DashboardHome() {
         </div>
       )}
 
+      {/* Weather Forecast Widget */}
+      {weather && weather.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-sm"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-cyan-500/10">
+              <CloudSun className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Prévisions d'ensoleillement</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400">Optimisation basée sur OpenMeteo</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-6 md:grid-cols-12 gap-4">
+             {weather.filter((_, i) => i % 2 === 0).slice(0, 12).map((item, index) => (
+                <div key={index} className="flex flex-col items-center p-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
+                  <span className="text-xs text-slate-500 dark:text-gray-400 mb-2">{item.time}</span>
+                  <Sun className="w-5 h-5 text-amber-400 mb-2" style={{ opacity: Math.max(0.3, Math.min(1, item.irradiance / 500)) }} />
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">{Math.round(item.irradiance)}</span>
+                  <span className="text-[10px] text-slate-400">W/m²</span>
+                </div>
+             ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Main Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm"
+          className="lg:col-span-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Production vs Consommation</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Production vs Consommation</h3>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400">
                 <div className="w-3 h-3 rounded-full bg-emerald-500" />
                 Production
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
                 Consommation
               </div>
@@ -223,7 +262,7 @@ export default function DashboardHome() {
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.2)" vertical={false} />
                 <XAxis 
                   dataKey="time" 
                   stroke="#9ca3af" 
@@ -270,9 +309,9 @@ export default function DashboardHome() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm h-full"
+              className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-sm h-full shadow-sm dark:shadow-none"
             >
-              <h3 className="text-lg font-semibold text-white mb-6">Sources d'énergie</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Sources d'énergie</h3>
               <div className="space-y-6">
                 {[
                   { label: 'Solaire', val: energyMix.solar, color: 'bg-emerald-500' },
@@ -281,10 +320,10 @@ export default function DashboardHome() {
                 ].map((item) => (
                   <div key={item.label}>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-400">{item.label}</span>
-                      <span className="text-white font-medium">{item.val}%</span>
+                      <span className="text-slate-500 dark:text-gray-400">{item.label}</span>
+                      <span className="text-slate-900 dark:text-white font-medium">{item.val}%</span>
                     </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${item.val}%` }}
@@ -296,12 +335,12 @@ export default function DashboardHome() {
                 ))}
               </div>
               
-              <div className="mt-8 pt-6 border-t border-white/10">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <Zap className="w-5 h-5 text-emerald-400" />
+              <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                  <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <div>
-                    <div className="text-sm font-medium text-emerald-400">Excellent !</div>
-                    <div className="text-xs text-emerald-500/80">Vous êtes à {stats.autonomy.value}% d'autonomie aujourd'hui.</div>
+                    <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Excellent !</div>
+                    <div className="text-xs text-emerald-600/80 dark:text-emerald-500/80">Vous êtes à {stats.autonomy.value}% d'autonomie aujourd'hui.</div>
                   </div>
                 </div>
               </div>

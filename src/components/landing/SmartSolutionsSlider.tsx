@@ -49,19 +49,19 @@ export default function SmartSolutionsSlider() {
   };
 
   return (
-    <section className="py-24 bg-[#0d1412] relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
+    <section className="py-24 bg-white dark:bg-[#0d1412] relative overflow-hidden transition-colors duration-500">
+      <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03] dark:opacity-5" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold text-white mb-6"
+            className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6"
           >
             Solutions <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)]">Intelligentes</span>
           </motion.h2>
-          <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">
             Découvrez notre gamme complète de technologies solaires adaptées à chaque besoin.
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function SmartSolutionsSlider() {
           <div className="flex justify-center items-center gap-8">
             <button 
               onClick={prevSlide}
-              className="hidden md:flex p-4 rounded-full border border-white/10 hover:bg-white/5 text-white transition-colors"
+              className="hidden md:flex p-4 rounded-full border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white transition-colors"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -83,23 +83,23 @@ export default function SmartSolutionsSlider() {
               >
                 {solutions.map((solution) => (
                   <div key={solution.id} className="w-full flex-shrink-0 px-4">
-                    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden group hover:border-[var(--color-primary)]/50 transition-colors duration-500">
+                    <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-lg border border-slate-200 dark:border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden group hover:border-[var(--color-primary)]/50 transition-colors duration-500">
                       <div className={`absolute inset-0 bg-gradient-to-br ${solution.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
                       
                       <div className="grid md:grid-cols-2 gap-8 items-center">
                         <div className="space-y-6">
-                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${solution.color} flex items-center justify-center`}>
+                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${solution.color} flex items-center justify-center shadow-lg`}>
                             <solution.icon className="h-8 w-8 text-white" />
                           </div>
                           
-                          <h3 className="text-3xl font-bold text-white">{solution.title}</h3>
-                          <p className="text-slate-300 text-lg leading-relaxed">
+                          <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{solution.title}</h3>
+                          <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
                             {solution.description}
                           </p>
                           
                           <ul className="space-y-3 pt-4">
                             {solution.stats.map((stat, idx) => (
-                              <li key={idx} className="flex items-center gap-3 text-slate-300">
+                              <li key={idx} className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
                                 <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${solution.color}`} />
                                 {stat}
                               </li>
@@ -107,11 +107,11 @@ export default function SmartSolutionsSlider() {
                           </ul>
                         </div>
                         
-                        <div className="relative h-64 md:h-full rounded-2xl overflow-hidden bg-black/20 border border-white/5">
+                        <div className="relative h-64 md:h-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/5">
                           {/* Placeholder visual for each solution */}
-                          <div className={`absolute inset-0 bg-gradient-to-br ${solution.color} opacity-20`} />
+                          <div className={`absolute inset-0 bg-gradient-to-br ${solution.color} opacity-10 dark:opacity-20`} />
                           <div className="absolute inset-0 flex items-center justify-center">
-                             <solution.icon className="h-32 w-32 text-white/10" />
+                             <solution.icon className="h-32 w-32 text-slate-300 dark:text-white/10" />
                           </div>
                         </div>
                       </div>
@@ -123,7 +123,7 @@ export default function SmartSolutionsSlider() {
 
             <button 
               onClick={nextSlide}
-              className="hidden md:flex p-4 rounded-full border border-white/10 hover:bg-white/5 text-white transition-colors"
+              className="hidden md:flex p-4 rounded-full border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white transition-colors"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
@@ -135,7 +135,7 @@ export default function SmartSolutionsSlider() {
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  idx === currentIndex ? 'bg-[var(--color-primary)] w-8' : 'bg-white/20 hover:bg-white/40'
+                  idx === currentIndex ? 'bg-[var(--color-primary)] w-8' : 'bg-slate-200 dark:bg-white/20 hover:bg-slate-300 dark:hover:bg-white/40'
                 }`}
               />
             ))}

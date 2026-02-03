@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import Hero from '@/components/landing/Hero';
 import PromoSection from '@/components/landing/PromoSection';
@@ -14,6 +15,7 @@ import FAQ from '@/components/landing/FAQ';
 import Testimonials from '@/components/landing/Testimonials';
 import Pricing from '@/components/landing/Pricing';
 import ConsultationForm from '@/components/ConsultationForm';
+import { QuoteTemplate } from '@/components/QuoteTemplate';
 import { motion } from 'framer-motion';
 import { fadeInVariants, cardHoverVariants } from '@/lib/animations';
 import { calculateSolarOutput, type CalculatorForm, type CalculatorResult, type AIRecommendation, formatCurrency, formatNumber } from '@/lib/utils';
@@ -31,6 +33,19 @@ export default function Home() {
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiAnswer, setAiAnswer] = useState('');
   const quoteRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section === 'integrations') {
+      setTimeout(() => {
+        const element = document.getElementById('integrations');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
+    }
+  }, [searchParams]);
 
   const handleGetStarted = () => {
     document.querySelector('#calculator')?.scrollIntoView({ behavior: 'smooth' });
@@ -108,23 +123,12 @@ export default function Home() {
 
   const handleSavePDF = async () => {
     if (!formData || !calcResult || !recommendation) return;
-    const blob = await pdfService.generateQuotePDF(
-      formData,
-      calcResult,
-      recommendation,
-      {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-      }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `devis-agalid-${Date.now()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      await pdfService.generateFromElement('quote-template', `devis-agalid-${Date.now()}`);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Erreur lors de la génération du PDF.');
+    }
   };
 
   return (
@@ -144,12 +148,12 @@ export default function Home() {
       <Pricing />
 
       {/* Calculator Section */}
-      <section id="calculator" className="py-20 bg-white">
+      <section id="calculator" className="py-20 bg-white dark:bg-[#0A1210] transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Calculateur Solaire Intelligent</h2>
-              <p className="text-gray-600">Remplissez le formulaire pour obtenir un devis et des recommandations personnalisées.</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Calculateur Solaire Intelligent</h2>
+              <p className="text-gray-600 dark:text-gray-400">Remplissez le formulaire pour obtenir un devis et des recommandations personnalisées.</p>
             </div>
             {!formOpen && (
               <button
@@ -162,7 +166,7 @@ export default function Home() {
           </div>
 
           {formOpen && (
-            <motion.div variants={fadeInVariants} initial="initial" animate="animate" className="bg-white rounded-xl shadow-lg p-6">
+            <motion.div variants={fadeInVariants} initial="initial" animate="animate" className="bg-white dark:bg-white/5 dark:border dark:border-white/10 rounded-xl shadow-lg p-6">
               <ConsultationForm onComplete={handleComplete} onClose={() => setFormOpen(false)} />
             </motion.div>
           )}
@@ -170,22 +174,22 @@ export default function Home() {
       </section>
 
       {/* Results Section */}
-      <section id="results" className="py-20 bg-gradient-to-br from-[color:var(--color-secondary)]/10 to-white">
+      <section id="results" className="py-20 bg-gradient-to-br from-[color:var(--color-secondary)]/10 to-white dark:from-[#0A1210] dark:to-[#0d1412] transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Résultats et Devis</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Résultats et Devis</h2>
 
           {formData && calcResult && recommendation ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" ref={quoteRef}>
               {/* Summary Card */}
-              <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="bg-white rounded-xl shadow p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Résumé Client</h3>
-                <div className="text-sm text-gray-600 space-y-2">
+              <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="bg-white dark:bg-white/5 dark:border dark:border-white/10 rounded-xl shadow p-6">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Résumé Client</h3>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <p>Nom: {formData.name}</p>
                   <p>Email: {formData.email}</p>
                   <p>Téléphone: {formData.phone}</p>
                   <p>Adresse: {formData.address}</p>
                 </div>
-                <div className="mt-6 text-sm text-gray-600 space-y-2">
+                <div className="mt-6 text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <p>Consommation: {formatNumber(formData.monthlyConsumption)} kWh/mois</p>
                   <p>Heures d'ensoleillement: {formData.peakSunHours} h/jour</p>
                   <p>Surface du toit: {formatNumber(formData.roofArea)} m²</p>
@@ -194,16 +198,16 @@ export default function Home() {
               </motion.div>
 
               {/* Calculation Card */}
-              <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="bg-white rounded-xl shadow p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Calcul du Système</h3>
-                <div className="text-sm text-gray-600 space-y-2">
+              <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="bg-white dark:bg-white/5 dark:border dark:border-white/10 rounded-xl shadow p-6">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Calcul du Système</h3>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <p>Nombre de panneaux: {calcResult.panelCount}</p>
                   <p>Puissance système: {(calcResult.panelCount * 400 / 1000).toFixed(1)} kW</p>
                   <p>Tension recommandée: {calcResult.recommendedVoltage} V</p>
                   <p>Surface d'installation: {calcResult.installationArea.toFixed(1)} m²</p>
                   <p>Production mensuelle: {formatNumber(calcResult.monthlyProduction)} kWh</p>
                 </div>
-                <div className="mt-6 text-sm text-gray-800 space-y-2">
+                <div className="mt-6 text-sm text-gray-800 dark:text-gray-300 space-y-2">
                   <p>Coût estimé: {formatCurrency(calcResult.systemCost)}</p>
                   <p>Économies annuelles: {formatCurrency(calcResult.estimatedSavings)}</p>
                   <p>Période de retour: {calcResult.paybackPeriod.toFixed(1)} ans</p>
@@ -212,9 +216,9 @@ export default function Home() {
               </motion.div>
 
               {/* Recommendation Card */}
-              <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="bg-white rounded-xl shadow p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Recommandation AI</h3>
-                <div className="text-sm text-gray-700 space-y-2">
+              <motion.div variants={cardHoverVariants} initial="initial" whileHover="hover" className="bg-white dark:bg-white/5 dark:border dark:border-white/10 rounded-xl shadow p-6">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Recommandation AI</h3>
+                <div className="text-sm text-gray-700 dark:text-gray-400 space-y-2">
                   <p>Type de système: {recommendation.systemType}</p>
                   <p>Panneaux: {recommendation.panelModel}</p>
                   <p>Onduleur: {recommendation.inverterType}</p>
@@ -248,49 +252,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI Q&A Section */}
-      <section id="services" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Questions au Conseiller AI</h2>
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <input
-                value={aiQuestion}
-                onChange={(e) => setAiQuestion(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-3"
-                placeholder="Posez une question (ex: Quel est le meilleur onduleur pour moi ?)"
-              />
-              <button
-                onClick={handleAskAI}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-              >
-                Demander
-              </button>
-            </div>
-            {aiAnswer && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-gray-800 text-sm whitespace-pre-line">
-                {aiAnswer}
-              </div>
-            )}
-            <p className="text-xs text-gray-500 mt-2">Conseil: les réponses AI peuvent être limitées si la clé API n'est pas configurée. Un fallback interne est utilisé.</p>
-          </div>
-        </div>
-      </section>
+      {/* Hidden Quote Template for PDF Generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        {formData && calcResult && recommendation && (
+          <QuoteTemplate 
+            id="quote-template" 
+            data={formData} 
+            result={calcResult} 
+            recommendation={recommendation} 
+          />
+        )}
+      </div>
 
-      {/* About and Contact placeholders */}
-      <section id="about" className="py-20 bg-gradient-to-br from-blue-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">À propos d'Agalid</h2>
-          <p className="text-gray-600 max-w-3xl">Agalid propose des solutions solaires innovantes pour les ménages et les entreprises au Maroc, avec une expertise locale et un engagement pour la durabilité.</p>
-        </div>
-      </section>
-
-      <section id="contact" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Contact</h2>
-          <p className="text-gray-600">Email: contact@agalid.com | Téléphone: +212 522 123 456</p>
-        </div>
-      </section>
     </Layout>
   );
 }

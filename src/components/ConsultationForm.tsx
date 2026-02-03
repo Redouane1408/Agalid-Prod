@@ -194,66 +194,66 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
             className="space-y-6"
           >
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Informations Personnelles</h2>
-              <p className="text-gray-600">Commençons par vos coordonnées</p>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Informations Personnelles</h2>
+              <p className="text-gray-600 dark:text-gray-400">Commençons par vos coordonnées</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <User className="inline h-4 w-4 mr-1" />
                   Nom Complet
                 </label>
                 <input
                   {...register('name')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                   placeholder="Jean Dupont"
                 />
                 {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email
                 </label>
                 <input
                   {...register('email')}
                   type="email"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                   placeholder="jean.dupont@email.com"
                 />
                 {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Téléphone
                 </label>
                 <input
                   {...register('phone')}
                   type="tel"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                   placeholder="+212 6 12 34 56 78"
                 />
                 {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <MapPin className="inline h-4 w-4 mr-1" />
                   Adresse
                 </label>
                 <input
-                  {...register('address')}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
-                  placeholder="123 Rue de la Paix, Casablanca"
-                />
+                    {...register('address')}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                    placeholder="123 Rue Didouche Mourad, Alger"
+                  />
                 {formErrors.address && <p className="text-red-500 text-sm mt-1">{formErrors.address.message}</p>}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">Type de client</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Type de client</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {clientTypeOptions.map((option) => (
                   <motion.label
@@ -262,7 +262,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                       "flex items-center p-4 border rounded-lg cursor-pointer transition-all",
                       watchedClientType === option.value
                         ? "border-[color:var(--color-secondary)] bg-[color:var(--color-secondary)]/10"
-                        : "border-gray-300 hover:border-gray-400"
+                        : "border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20"
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -274,7 +274,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                       className="sr-only"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-gray-800">{option.label}</div>
+                      <div className="font-medium text-gray-800 dark:text-white">{option.label}</div>
                     </div>
                   </motion.label>
                 ))}
@@ -293,42 +293,42 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
             className="space-y-6"
           >
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Consommation Énergétique</h2>
-              <p className="text-gray-600">Analysons vos besoins énergétiques</p>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Consommation Énergétique</h2>
+              <p className="text-gray-600 dark:text-gray-400">Analysons vos besoins énergétiques</p>
             </div>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Zap className="inline h-4 w-4 mr-1" />
                   Consommation mensuelle (kWh)
                 </label>
                 <input
                   {...register('monthlyConsumption', { valueAsNumber: true })}
                   type="number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                   placeholder="350"
                 />
                 {formErrors.monthlyConsumption && <p className="text-red-500 text-sm mt-1">{formErrors.monthlyConsumption.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Users className="inline h-4 w-4 mr-1" />
                   Nombre de personnes
                 </label>
                 <input
                   {...register('householdSize', { valueAsNumber: true })}
                   type="number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
                   placeholder="4"
                 />
                 {formErrors.householdSize && <p className="text-red-500 text-sm mt-1">{formErrors.householdSize.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">
-                  Type d\'usage énergétique
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Type d'usage énergétique
                 </label>
                 <div className="grid grid-cols-1 gap-3">
                   {energyPatternOptions.map((option) => (
@@ -338,7 +338,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                         "flex items-center p-4 border rounded-lg cursor-pointer transition-all",
                         watchedEnergyPattern === option.value
                           ? "border-[color:var(--color-secondary)] bg-[color:var(--color-secondary)]/10"
-                          : "border-gray-300 hover:border-gray-400"
+                          : "border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20"
                       )}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -350,8 +350,8 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                         className="sr-only"
                       />
                       <div className="flex-1">
-                        <div className="font-medium text-gray-800">{option.label}</div>
-                        <div className="text-sm text-gray-600">{option.description}</div>
+                        <div className="font-medium text-gray-800 dark:text-white">{option.label}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
                       </div>
                     </motion.label>
                   ))}
@@ -360,7 +360,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Appareils électroménagers principaux
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -373,7 +373,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                         "p-3 text-sm border rounded-lg transition-all",
                         watchedAppliances.includes(appliance)
                           ? "border-[color:var(--color-secondary)] bg-[color:var(--color-secondary)]/10 text-[color:var(--color-secondary)]"
-                          : "border-gray-300 hover:border-gray-400"
+                          : "border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 text-gray-700 dark:text-gray-300"
                       )}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -397,46 +397,46 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
             className="space-y-6"
           >
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Détails du Propriété</h2>
-              <p className="text-gray-600">Informations sur votre propriété</p>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Détails du Propriété</h2>
+              <p className="text-gray-600 dark:text-gray-400">Informations sur votre propriété</p>
             </div>
 
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Surface du toit (m²)
                   </label>
                   <input
                     {...register('roofArea', { valueAsNumber: true })}
                     type="number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                     placeholder="50"
                   />
                   {formErrors.roofArea && <p className="text-red-500 text-sm mt-1">{formErrors.roofArea.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Localisation
                   </label>
                   <input
                     {...register('location')}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
-                    placeholder="Casablanca"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                    placeholder="Alger"
                   />
                   {formErrors.location && <p className="text-red-500 text-sm mt-1">{formErrors.location.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Heures d\'ensoleillement par jour
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Heures d'ensoleillement par jour
                   </label>
                   <input
                     {...register('peakSunHours', { valueAsNumber: true })}
                     type="number"
                     step="0.1"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                     placeholder="5.5"
                   />
                   {formErrors.peakSunHours && <p className="text-red-500 text-sm mt-1">{formErrors.peakSunHours.message}</p>}
@@ -444,7 +444,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Type de toit
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -455,7 +455,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                         "p-4 border rounded-lg cursor-pointer transition-all",
                         watchedRoofType === option.value
                           ? "border-[color:var(--color-secondary)] bg-[color:var(--color-secondary)]/10"
-                          : "border-gray-300 hover:border-gray-400"
+                          : "border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20"
                       )}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -467,8 +467,8 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                         className="sr-only"
                       />
                       <div className="text-center">
-                        <div className="font-medium text-gray-800 mb-1">{option.label}</div>
-                        <div className="text-sm text-gray-600">{option.description}</div>
+                        <div className="font-medium text-gray-800 dark:text-white mb-1">{option.label}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
                       </div>
                     </motion.label>
                   ))}
@@ -477,13 +477,13 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
               </div>
 
               <div>
-                <label className="flex items-center space-x-3 p-4 border border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
+                <label className="flex items-center space-x-3 p-4 border border-gray-300 dark:border-white/10 rounded-lg cursor-pointer hover:border-gray-400 dark:hover:border-white/20 transition-colors">
                   <input
                     {...register('hasShading')}
                     type="checkbox"
                     className="w-4 h-4 text-[var(--color-secondary)] border-gray-300 rounded focus:ring-[var(--color-secondary)]"
                   />
-                  <span className="text-gray-700">Le toit a-t-il des zones d\'ombre ?</span>
+                  <span className="text-gray-700 dark:text-gray-300">Le toit a-t-il des zones d'ombre ?</span>
                 </label>
               </div>
             </div>
@@ -499,28 +499,28 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
             className="space-y-6"
           >
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Budget & Préférences</h2>
-              <p className="text-gray-600">Finalisons votre demande</p>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Budget & Préférences</h2>
+              <p className="text-gray-600 dark:text-gray-400">Finalisons votre demande</p>
             </div>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <DollarSign className="inline h-4 w-4 mr-1" />
                   Budget disponible (MAD)
                 </label>
                 <input
                   {...register('budget', { valueAsNumber: true })}
                   type="number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
                   placeholder="50000"
                 />
                 {formErrors.budget && <p className="text-red-500 text-sm mt-1">{formErrors.budget.message}</p>}
               </div>
 
               <div className="bg-[color:var(--color-secondary)]/10 border border-[color:var(--color-secondary)]/30 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-800 mb-3">Résumé de votre demande</h3>
-                <div className="space-y-2 text-sm text-gray-600">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-3">Résumé de votre demande</h3>
+                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                   <p>• Client: {watch('name') || 'Non spécifié'}</p>
                   <p>• Type de client: {watch('clientType') || 'Non spécifié'}</p>
                   <p>• Consommation: {watch('monthlyConsumption') || 0} kWh/mois</p>
@@ -546,15 +546,15 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
             const active = idx === currentStep;
             return (
               <div key={s.title} className={cn('flex items-center gap-2', idx < steps.length - 1 && 'mr-2')}>
-                <div className={cn('flex items-center gap-2 px-3 py-2 rounded-full border', active ? 'bg-[color:var(--color-secondary)]/10 border-[color:var(--color-secondary)]' : 'bg-white border-gray-200')}>
-                  <Icon className={cn('h-4 w-4', active ? 'text-[var(--color-secondary)]' : 'text-gray-500')} />
-                  <span className={cn('text-sm font-medium', active ? 'text-[var(--color-secondary)]' : 'text-gray-600')}>{s.title}</span>
+                <div className={cn('flex items-center gap-2 px-3 py-2 rounded-full border transition-colors', active ? 'bg-[color:var(--color-secondary)]/10 border-[color:var(--color-secondary)]' : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10')}>
+                  <Icon className={cn('h-4 w-4', active ? 'text-[var(--color-secondary)]' : 'text-gray-500 dark:text-gray-400')} />
+                  <span className={cn('text-sm font-medium hidden sm:inline', active ? 'text-[var(--color-secondary)]' : 'text-gray-600 dark:text-gray-400')}>{s.title}</span>
                 </div>
               </div>
             );
           })}
         </div>
-        <div className="text-sm text-gray-600">Étape {currentStep + 1} / {steps.length}</div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">Étape {currentStep + 1} / {steps.length}</div>
       </div>
 
       {renderStepContent()}
@@ -563,7 +563,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
         <button
           type="button"
           onClick={handlePrevious}
-          className={cn('px-4 py-2 rounded-lg border', currentStep === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50')}
+          className={cn('px-4 py-2 rounded-lg border dark:border-white/10 dark:text-white transition-colors', currentStep === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-white/5')}
           disabled={currentStep === 0}
         >
           <ArrowLeft className="inline h-4 w-4 mr-2" /> Précédent
@@ -573,7 +573,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
           <button
             type="button"
             onClick={handleNext}
-            className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] hover:brightness-110 text-black"
+            className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] hover:brightness-110 text-black font-medium shadow-sm transition-all"
           >
             Suivant <ArrowRight className="inline h-4 w-4 ml-2" />
           </button>
@@ -581,7 +581,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
           <button
             type="button"
             onClick={handleSubmit(onSubmit)}
-            className={cn('px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white', isSubmitting && 'opacity-70')}
+            className={cn('px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-all', isSubmitting && 'opacity-70')}
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Envoi...' : 'Terminer'} <CheckCircle className="inline h-4 w-4 ml-2" />
@@ -590,7 +590,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
       </div>
 
       <div className="text-right">
-        <button type="button" onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">Fermer</button>
+        <button type="button" onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">Fermer</button>
       </div>
     </div>
   );

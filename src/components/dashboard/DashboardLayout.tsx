@@ -33,7 +33,7 @@ export default function DashboardLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050b09] text-white flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050b09] text-slate-900 dark:text-white flex transition-colors duration-500">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -50,7 +50,7 @@ export default function DashboardLayout() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-[#0A1210] border-r border-white/10 z-50 md:hidden flex flex-col"
+              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-[#0A1210] border-r border-slate-200 dark:border-white/10 z-50 md:hidden flex flex-col"
             >
               <div className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export default function DashboardLayout() {
                 </div>
                 <button 
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -79,24 +79,24 @@ export default function DashboardLayout() {
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${
                         isActive 
-                          ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 text-emerald-400' 
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 text-emerald-600 dark:text-emerald-400' 
+                          : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       {isActive && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-r-full" />
                       )}
-                      <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-400 group-hover:text-white'}`} />
+                      <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
                       <span>{item.name}</span>
                     </Link>
                   );
                 })}
               </nav>
 
-              <div className="p-4 border-t border-white/10">
+              <div className="p-4 border-t border-slate-200 dark:border-white/10">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all w-full"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 transition-all w-full"
                 >
                   <LogOut className="w-5 h-5" />
                   <span>Déconnexion</span>
@@ -111,7 +111,7 @@ export default function DashboardLayout() {
       <motion.aside
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 80 }}
-        className="hidden md:flex flex-col border-r border-white/10 bg-[#0A1210]/50 backdrop-blur-xl h-screen sticky top-0 z-40"
+        className="hidden md:flex flex-col border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0A1210]/50 backdrop-blur-xl h-screen sticky top-0 z-40 transition-colors duration-500"
       >
         <div className="p-6 flex items-center justify-between">
           <AnimatePresence mode="wait">
@@ -147,7 +147,7 @@ export default function DashboardLayout() {
           
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             {isSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
@@ -162,8 +162,8 @@ export default function DashboardLayout() {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${
                   isActive 
-                    ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 text-emerald-400' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 text-emerald-600 dark:text-emerald-400' 
+                    : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 {isActive && (
@@ -172,7 +172,7 @@ export default function DashboardLayout() {
                     className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-r-full"
                   />
                 )}
-                <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-400 group-hover:text-white'}`} />
+                <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
                 {isSidebarOpen && (
                   <motion.span
                     initial={{ opacity: 0, x: -10 }}
@@ -187,10 +187,10 @@ export default function DashboardLayout() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-slate-200 dark:border-white/10">
           <button
             onClick={handleLogout}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all w-full ${!isSidebarOpen && 'justify-center'}`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 transition-all w-full ${!isSidebarOpen && 'justify-center'}`}
           >
             <LogOut className="w-5 h-5" />
             {isSidebarOpen && <span>Déconnexion</span>}
@@ -201,31 +201,31 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 border-b border-white/10 bg-[#0A1210]/50 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <header className="h-16 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0A1210]/50 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-colors duration-500">
           <div className="flex items-center gap-4 md:hidden">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors"
+              className="p-2 -ml-2 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <span className="font-bold text-white">Agalid</span>
+            <span className="font-bold text-slate-900 dark:text-white">Agalid</span>
           </div>
 
           <div className="flex items-center justify-end w-full gap-6">
-            <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+            <button className="relative p-2 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 border-2 border-[#0A1210]" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 border-2 border-white dark:border-[#0A1210]" />
             </button>
             
-            <div className="flex items-center gap-3 pl-6 border-l border-white/10">
+            <div className="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-white/10">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-medium text-white">John Doe</div>
-                <div className="text-xs text-gray-400">Premium Plan</div>
+                <div className="text-sm font-medium text-slate-900 dark:text-white">John Doe</div>
+                <div className="text-xs text-slate-500 dark:text-gray-400">Premium Plan</div>
               </div>
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 p-[2px]">
-                <div className="w-full h-full rounded-full bg-[#0A1210] flex items-center justify-center">
-                  <User className="w-5 h-5 text-emerald-400" />
+                <div className="w-full h-full rounded-full bg-white dark:bg-[#0A1210] flex items-center justify-center">
+                  <User className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
             </div>

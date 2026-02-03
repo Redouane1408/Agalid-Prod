@@ -21,4 +21,9 @@ export class DashboardController {
   getMix(@Request() req) {
     return this.dashboardService.getEnergyMix(req.user.userId);
   }
+
+  @Get('weather')
+  getWeather(@Request() req) {
+    return this.dashboardService.getWeatherForecast(req.user.userId);
+  }
 }

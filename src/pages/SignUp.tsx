@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
 export default function SignUp() {
@@ -11,6 +11,9 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const from = searchParams.get('from');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +27,7 @@ export default function SignUp() {
         password
       });
 
-      navigate('/signin');
+      navigate(from ? `/signin?from=${from}` : '/signin');
     } catch (err: unknown) {
       console.error('Registration error:', err);
       if (axios.isAxiosError(err)) {
@@ -40,14 +43,14 @@ export default function SignUp() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Nom complet</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Nom complet</label>
         <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+            className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-3 pl-10 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
             placeholder="John Doe"
             required
           />
@@ -55,14 +58,14 @@ export default function SignUp() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Email</label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+            className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-3 pl-10 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
             placeholder="nom@exemple.com"
             required
           />
@@ -70,14 +73,14 @@ export default function SignUp() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mot de passe</label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+            className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-3 pl-10 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
             placeholder="••••••••"
             required
           />
@@ -88,7 +91,7 @@ export default function SignUp() {
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-400 text-sm"
+          className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-600 dark:text-red-400 text-sm"
         >
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
@@ -98,7 +101,7 @@ export default function SignUp() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-4 rounded-lg hover:from-emerald-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+        className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-4 rounded-lg hover:from-emerald-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group shadow-lg shadow-emerald-500/20"
       >
         {isLoading ? (
           <Loader2 className="w-5 h-5 animate-spin" />
@@ -110,9 +113,9 @@ export default function SignUp() {
         )}
       </button>
 
-      <p className="text-center text-gray-400 text-sm">
+      <p className="text-center text-slate-500 dark:text-gray-400 text-sm">
         Déjà un compte ?{' '}
-        <Link to="/signin" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+        <Link to={from ? `/signin?from=${from}` : "/signin"} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 font-medium transition-colors">
           Se connecter
         </Link>
       </p>
