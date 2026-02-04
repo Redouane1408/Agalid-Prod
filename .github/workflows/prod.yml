@@ -30,9 +30,29 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
+      - name: Debug Secrets & Connectivity
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          PORT: ${{ secrets.PORT || 22 }}
+        run: |
+          echo "Checking secrets..."
+          [ -z "$HOST" ] && echo "❌ HOST is empty" || echo "✅ HOST is set"
+          [ -z "$USERNAME" ] && echo "❌ USERNAME is empty" || echo "✅ USERNAME is set"
+          [ -z "$SSH_KEY" ] && echo "❌ SSH_KEY is empty" || echo "✅ SSH_KEY is set"
+          
+          echo "Testing connectivity to $HOST:$PORT..."
+          if command -v nc >/dev/null 2>&1; then
+            nc -zv -w 10 "$HOST" "$PORT" && echo "✅ Connection successful" || echo "❌ Connection failed: Unable to reach $HOST on port $PORT"
+          else
+            echo "⚠️ 'nc' not found, skipping connectivity check"
+          fi
+
       - name: Deploy to Production Server
         uses: appleboy/ssh-action@v1.0.3
         with:
+          debug: true
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
