@@ -72,43 +72,72 @@ jobs:
             echo "⚠️ 'nc' not found, skipping connectivity check"
           fi
 
-      - name: Deploy to Production Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          debug: true
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.PORT || 2222 }}
-          timeout: 120s
-          command_timeout: 30m
-          script: |
-            # Stop script on error
-            set -e
+      - name: Setup SSH & Deploy with Retry
+        run: |
+          # 1. Setup SSH Key
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # 2. Prepare Env File
+          echo "${{ secrets.PROD_ENV_FILE }}" > production.env
+          
+          # 3. Define Variables
+          MAX_RETRIES=10
+          SSH_HOST="${{ secrets.HOST }}"
+          SSH_PORT="${{ secrets.PORT || 2222 }}"
+          SSH_USER="${{ secrets.USERNAME }}"
+          
+          echo "🚀 Starting Robust Deployment (Max Retries: $MAX_RETRIES)"
+          
+          # 4. Retry Loop
+          for ((i=1; i<=MAX_RETRIES; i++)); do
+            echo "---------------------------------------------------"
+            echo "� Attempt $i/$MAX_RETRIES: Connecting to $SSH_HOST..."
             
-            echo "🚀 Starting deployment..."
+            # Add host to known_hosts dynamically
+            ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
             
-            # Navigate to project directory (Create if needed, though manual clone is recommended first)
-            mkdir -p ~/agalid
-            cd ~/agalid
-            
-            # Pull latest changes
-            echo "📥 Pulling latest code..."
-            # If not a git repo, warn user (or try to clone if we had auth, but we assume manual setup first)
-            if [ -d ".git" ]; then
-              git pull origin main
+            # Step A: Copy .env file
+            echo "📤 Uploading .env file..."
+            if scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/.env; then
+                echo "✅ .env file uploaded successfully."
             else
-              echo "❌ Error: ~/agalid is not a git repository. Please clone the repo on the server first."
-              exit 1
+                echo "⚠️ SCP upload failed. Waiting 15s..."
+                sleep 15
+                continue
             fi
 
-            # Inject Production Environment Variables
-            echo "🔑 Injecting secrets..."
-            echo "${{ secrets.PROD_ENV_FILE }}" > .env
-
-            # Run Deployment Script
-            echo "🏗️ Running infra/deploy.sh..."
-            chmod +x infra/deploy.sh
-            bash infra/deploy.sh
+            # Step B: Run Remote Script
+            echo "▶️ Executing remote commands..."
+            # Use single-quoted heredoc to prevent local variable expansion and simplify quoting
+            ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST 'bash -s' << 'EOF'
+              set -e
+              mkdir -p ~/agalid
+              cd ~/agalid
+              
+              if [ -d ".git" ]; then
+                echo "📥 Pulling latest changes..."
+                git pull origin main
+              else
+                echo "❌ Error: ~/agalid is not a git repository."
+                exit 1
+              fi
+              
+              echo "🏗️ Executing deploy.sh..."
+              chmod +x infra/deploy.sh
+              bash infra/deploy.sh
+              echo "✅ Remote script completed successfully!"
+          EOF
             
-            echo "✅ Deployment successful!"
+            if [ $? -eq 0 ]; then
+                echo "🎉 Deployment SUCCESSFUL on attempt $i!"
+                exit 0
+            else
+                echo "⚠️ SSH command failed. Waiting 15s..."
+                sleep 15
+            fi
+          done
+          
+          echo "❌ FATAL: Deployment failed after $MAX_RETRIES attempts."
+          exit 1
