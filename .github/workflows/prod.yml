@@ -42,6 +42,20 @@ jobs:
           [ -z "$USERNAME" ] && echo "❌ USERNAME is empty" || echo "✅ USERNAME is set"
           [ -z "$SSH_KEY" ] && echo "❌ SSH_KEY is empty" || echo "✅ SSH_KEY is set"
           
+          # Validate SSH Key Format
+          if echo "$SSH_KEY" | grep -q "PRIVATE KEY"; then
+            echo "✅ SSH_KEY contains 'PRIVATE KEY' header"
+          else
+            echo "❌ SSH_KEY does not look like a valid private key (missing header)"
+          fi
+          
+          if [ "$(echo "$SSH_KEY" | wc -l)" -lt 2 ]; then
+             echo "⚠️ SSH_KEY has only one line. It should be multiline!"
+             echo "👉 Action: In GitHub Secrets, ensure you paste the key exactly as it is in the file, including newlines."
+          else
+             echo "✅ SSH_KEY has multiple lines"
+          fi
+
           echo "Testing connectivity to $HOST:$PORT..."
           if command -v nc >/dev/null 2>&1; then
             for i in {1..5}; do
