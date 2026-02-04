@@ -53,8 +53,7 @@ jobs:
               echo "⏳ Connection failed. Retrying in 10s..."
               sleep 10
             done
-            echo "❌ Connection failed after 5 attempts: Unable to reach $HOST on port $PORT"
-            exit 1
+            echo "⚠️ Connection failed after 5 attempts. Proceeding anyway to let ssh-action try with longer timeout..."
           else
             echo "⚠️ 'nc' not found, skipping connectivity check"
           fi
