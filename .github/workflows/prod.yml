@@ -44,7 +44,17 @@ jobs:
           
           echo "Testing connectivity to $HOST:$PORT..."
           if command -v nc >/dev/null 2>&1; then
-            nc -zv -w 10 "$HOST" "$PORT" && echo "✅ Connection successful" || echo "❌ Connection failed: Unable to reach $HOST on port $PORT"
+            for i in {1..5}; do
+              echo "Attempt $i: Testing connection to $HOST:$PORT..."
+              if nc -zv -w 10 "$HOST" "$PORT"; then
+                echo "✅ Connection successful"
+                exit 0
+              fi
+              echo "⏳ Connection failed. Retrying in 10s..."
+              sleep 10
+            done
+            echo "❌ Connection failed after 5 attempts: Unable to reach $HOST on port $PORT"
+            exit 1
           else
             echo "⚠️ 'nc' not found, skipping connectivity check"
           fi
@@ -57,7 +67,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 2222 }}
-          timeout: 60s
+          timeout: 120s
           command_timeout: 30m
           script: |
             # Stop script on error
