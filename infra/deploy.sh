@@ -9,7 +9,9 @@ fi
 
 # 2. Setup Environment
 echo "Setting up environment..."
-if [ -f "infra/production.env" ]; then
+if [ -f ".env" ]; then
+    echo "Using existing .env file (likely injected by CI)"
+elif [ -f "infra/production.env" ]; then
     cp infra/production.env .env
     echo "Loaded configuration from infra/production.env"
 else
