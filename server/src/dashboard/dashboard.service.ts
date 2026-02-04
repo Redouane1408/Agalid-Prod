@@ -103,13 +103,7 @@ export class DashboardService {
     };
   }
 
-  async getProductionHistory(userId: number, period: string = 'today') {
-    // 1. Get Integration status
-    const integrations = await this.prisma.userIntegration.findMany({
-      where: { userId, isConnected: true }
-    });
-    const hasEnphase = integrations.some(i => i.provider === 'enphase');
-    
+  async getProductionHistory() {
     // 2. Fetch Real Weather Data for Solar Potential
     const solarForecast = await this.weatherService.getSolarForecast();
 
@@ -157,7 +151,7 @@ export class DashboardService {
     const hasEnphase = integrations.some(i => i.provider === 'enphase');
 
     // Default Mix (Grid dominant)
-    let mix = { solar: 5, grid: 95, battery: 0 };
+    const mix = { solar: 5, grid: 95, battery: 0 };
 
     if (hasEnphase || hasMeteo) {
        // Calculate simplified mix based on "production vs consumption" assumption

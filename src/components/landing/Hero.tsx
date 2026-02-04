@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight, Zap, Sun, BarChart3 } from 'lucide-react';
-import { heroVariants, floatAnimation } from '@/lib/animations';
+import { CheckCircle, ArrowRight, Zap } from 'lucide-react';
+import { heroVariants } from '@/lib/animations';
 import AnimatedBackground from './AnimatedBackground';
 import SolarPanel3D from './SolarPanel3D';
 

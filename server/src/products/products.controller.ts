@@ -10,6 +10,7 @@ export class ProductsController {
     @Query('category') category?: string,
     @Query('search') search?: string,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     
     if (category && category !== 'All') {

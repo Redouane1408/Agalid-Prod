@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ShoppingBag, Battery, Zap, Sun, Box, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, ShoppingBag, Battery, Zap, Sun, Box, Loader2, ArrowRight } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useTheme } from '../hooks/useTheme';
 import { cn } from '../lib/utils';
@@ -19,6 +19,7 @@ interface Product {
   price: number;
   image: string;
   category: { name: string };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   specs: any;
 }
 
@@ -32,12 +33,7 @@ const Products = () => {
 
   useEffect(() => {
     fetchCategories();
-    fetchProducts();
   }, []);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [selectedCategory, searchQuery]);
 
   const fetchCategories = async () => {
     try {
@@ -48,10 +44,10 @@ const Products = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: { category?: string; search?: string } = {};
       if (selectedCategory !== 'All') params.category = selectedCategory;
       if (searchQuery) params.search = searchQuery;
       
@@ -62,7 +58,11 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const getCategoryIcon = (name: string) => {
     switch (name.toLowerCase()) {

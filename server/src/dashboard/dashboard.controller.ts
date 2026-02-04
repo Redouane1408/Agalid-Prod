@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Query, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DashboardService } from './dashboard.service';
 
@@ -13,8 +13,8 @@ export class DashboardController {
   }
 
   @Get('production')
-  getHistory(@Request() req, @Query('period') period: string) {
-    return this.dashboardService.getProductionHistory(req.user.userId, period);
+  getHistory() {
+    return this.dashboardService.getProductionHistory();
   }
 
   @Get('mix')

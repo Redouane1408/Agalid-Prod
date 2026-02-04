@@ -30,8 +30,6 @@ export default function Home() {
   const [calcResult, setCalcResult] = useState<CalculatorResult | null>(null);
   const [recommendation, setRecommendation] = useState<AIRecommendation | null>(null);
   const [quoteId, setQuoteId] = useState<number | null>(null);
-  const [aiQuestion, setAiQuestion] = useState('');
-  const [aiAnswer, setAiAnswer] = useState('');
   const quoteRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
 
@@ -110,15 +108,6 @@ export default function Home() {
     } catch (e) {
       console.error('WhatsApp failed', e);
     }
-  };
-
-  const handleAskAI = async () => {
-    if (!aiQuestion.trim()) return;
-    const response = await aiService.generateCustomResponse(aiQuestion, {
-      formData: formData ?? undefined,
-      calculationResult: calcResult ?? undefined
-    });
-    setAiAnswer(response);
   };
 
   const handleSavePDF = async () => {

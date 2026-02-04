@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Home, Info, FileText, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight } from 'lucide-react';
+import { Menu, X, Sun, Moon, Home, Info, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import Footer from './Footer';
