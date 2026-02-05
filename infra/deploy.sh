@@ -30,10 +30,11 @@ if systemctl is-active --quiet nginx; then
     echo "$SSHPASS" | sudo -S systemctl disable nginx
 fi
 
-# Ensure Firewall allows Ports 80 and 443
+# Ensure Firewall allows Port 80 (Disable ufw to be safe)
 echo "Configuring firewall..."
 echo "$SSHPASS" | sudo -S ufw allow 80
 echo "$SSHPASS" | sudo -S ufw allow 443
+# echo "$SSHPASS" | sudo -S ufw disable # Uncomment if firewall issues persist
 
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"

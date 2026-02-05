@@ -2,7 +2,7 @@
     email orders@agalid.com
 }
 
-agalid.com, www.agalid.com {
+:80 {
     reverse_proxy /api/* server:4000
     reverse_proxy frontend:80
 }
