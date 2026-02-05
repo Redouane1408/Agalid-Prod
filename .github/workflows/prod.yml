@@ -72,35 +72,34 @@ jobs:
             echo "⚠️ 'nc' not found, skipping connectivity check"
           fi
 
-      - name: Setup SSH & Deploy with Retry
+      - name: Deploy with Password (sshpass)
+        env:
+          SSHPASS: ${{ secrets.PASSWORD }}
         run: |
-          # 1. Setup SSH Key
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # 2. Prepare Env File
+          # 0. Install sshpass
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+          # 1. Prepare Env File
           echo "${{ secrets.PROD_ENV_FILE }}" > production.env
           
-          # 3. Define Variables
+          # 2. Define Variables
           MAX_RETRIES=10
           SSH_HOST="${{ secrets.HOST }}"
           SSH_PORT="${{ secrets.PORT || 2222 }}"
           SSH_USER="${{ secrets.USERNAME }}"
           
-          echo "🚀 Starting Robust Deployment (Max Retries: $MAX_RETRIES)"
+          echo "🚀 Starting Deployment with Password (Max Retries: $MAX_RETRIES)"
           
-          # 4. Retry Loop
+          # 3. Retry Loop
           for ((i=1; i<=MAX_RETRIES; i++)); do
             echo "---------------------------------------------------"
-            echo "� Attempt $i/$MAX_RETRIES: Connecting to $SSH_HOST..."
-            
-            # Add host to known_hosts dynamically
-            ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+            echo "🔄 Attempt $i/$MAX_RETRIES: Connecting to $SSH_HOST..."
             
             # Step A: Copy .env file
             echo "📤 Uploading .env file..."
-            if scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/.env; then
+            # sshpass -e uses the SSHPASS environment variable
+            if sshpass -e scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/.env; then
                 echo "✅ .env file uploaded successfully."
             else
                 echo "⚠️ SCP upload failed. Waiting 15s..."
@@ -110,23 +109,30 @@ jobs:
 
             # Step B: Run Remote Script
             echo "▶️ Executing remote commands..."
-            # Use single-quoted heredoc to prevent local variable expansion and simplify quoting
-            ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST 'bash -s' << 'EOF'
+            sshpass -e ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST 'bash -s' << 'EOF'
               set -e
+              # Ensure directory exists
               mkdir -p ~/agalid
               cd ~/agalid
               
+              # Check for git repo
               if [ -d ".git" ]; then
                 echo "📥 Pulling latest changes..."
                 git pull origin main
               else
                 echo "❌ Error: ~/agalid is not a git repository."
+                echo "👉 You must manually clone the repo on the server first, or ensure the path is correct."
                 exit 1
               fi
               
               echo "🏗️ Executing deploy.sh..."
-              chmod +x infra/deploy.sh
-              bash infra/deploy.sh
+              if [ -f "infra/deploy.sh" ]; then
+                chmod +x infra/deploy.sh
+                bash infra/deploy.sh
+              else
+                echo "❌ Error: infra/deploy.sh not found!"
+                exit 1
+              fi
               echo "✅ Remote script completed successfully!"
           EOF
             
