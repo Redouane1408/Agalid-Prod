@@ -96,6 +96,16 @@ jobs:
             echo "---------------------------------------------------"
             echo "🔄 Attempt $i/$MAX_RETRIES: Connecting to $SSH_HOST..."
             
+            # Step 0: Ensure target directory exists
+            echo "📁 Ensuring target directory exists..."
+            if sshpass -e ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/agalid"; then
+                echo "✅ Directory ~/agalid verified."
+            else
+                echo "⚠️ SSH connection failed during mkdir. Waiting 15s..."
+                sleep 15
+                continue
+            fi
+
             # Step A: Copy .env file
             echo "📤 Uploading .env file..."
             # sshpass -e uses the SSHPASS environment variable
