@@ -16,6 +16,20 @@ fi
 
 # 2. Setup Environment
 echo "Setting up environment..."
+
+# Stop conflicting host services (Apache/Nginx) that hog Port 80
+echo "Stopping potential conflicting web servers on host..."
+if systemctl is-active --quiet apache2; then
+    echo "Stopping Apache2..."
+    echo "$SSHPASS" | sudo -S systemctl stop apache2
+    echo "$SSHPASS" | sudo -S systemctl disable apache2
+fi
+if systemctl is-active --quiet nginx; then
+    echo "Stopping Host Nginx..."
+    echo "$SSHPASS" | sudo -S systemctl stop nginx
+    echo "$SSHPASS" | sudo -S systemctl disable nginx
+fi
+
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
     
