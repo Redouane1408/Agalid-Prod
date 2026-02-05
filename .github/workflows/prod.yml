@@ -145,6 +145,8 @@ jobs:
                 echo "✅ Repository initialized successfully."
               else
                 echo "📥 Pulling latest changes..."
+                # Reset local changes (like permission changes on deploy.sh) to avoid merge conflicts
+                git reset --hard HEAD
                 git pull origin main
               fi
               
