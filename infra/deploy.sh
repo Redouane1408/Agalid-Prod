@@ -18,6 +18,15 @@ fi
 echo "Setting up environment..."
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
+    
+    # Force HTTP settings in .env to bypass client router issues (Port 443 blocked)
+    echo "Patching .env for HTTP-only mode..."
+    sed -i 's|https://|http://|g' .env
+    
+    # Update ALLOWED_ORIGIN and FRONTEND_URL to include IP
+    sed -i '/ALLOWED_ORIGIN/s|$|,http://197.201.240.218|' .env
+    sed -i 's|FRONTEND_URL=.*|FRONTEND_URL=http://197.201.240.218|' .env
+    
 elif [ -f "infra/production.env" ]; then
     cp infra/production.env .env
     echo "Loaded configuration from infra/production.env"
