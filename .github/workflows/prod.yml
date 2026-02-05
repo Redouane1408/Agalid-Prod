@@ -126,13 +126,26 @@ jobs:
               cd ~/agalid
               
               # Check for git repo
-              if [ -d ".git" ]; then
+              if [ ! -d ".git" ]; then
+                echo "⚠️ ~/agalid is not a git repository. Initializing and cloning..."
+                
+                # Backup .env because git checkout -f might overwrite/delete untracked files if they conflict (unlikely for .env but safe)
+                if [ -f .env ]; then cp .env /tmp/agalid_env_backup; fi
+                
+                # Initialize and fetch
+                git init
+                # Use GITHUB_TOKEN for authentication
+                git remote add origin https://oauth2:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+                git fetch origin
+                git checkout -f main
+                git branch --set-upstream-to=origin/main main
+                
+                # Restore .env
+                if [ -f /tmp/agalid_env_backup ]; then mv /tmp/agalid_env_backup .env; fi
+                echo "✅ Repository initialized successfully."
+              else
                 echo "📥 Pulling latest changes..."
                 git pull origin main
-              else
-                echo "❌ Error: ~/agalid is not a git repository."
-                echo "👉 You must manually clone the repo on the server first, or ensure the path is correct."
-                exit 1
               fi
               
               echo "🏗️ Executing deploy.sh..."
