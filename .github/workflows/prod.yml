@@ -151,6 +151,8 @@ jobs:
               echo "🏗️ Executing deploy.sh..."
               if [ -f "infra/deploy.sh" ]; then
                 chmod +x infra/deploy.sh
+                # Export SSHPASS so deploy.sh can use it for sudo
+                export SSHPASS='${{ secrets.PASSWORD }}'
                 bash infra/deploy.sh
               else
                 echo "❌ Error: infra/deploy.sh not found!"
