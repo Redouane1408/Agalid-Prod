@@ -34,6 +34,8 @@ fi
 echo "Configuring firewall..."
 echo "$SSHPASS" | sudo -S ufw allow 80
 echo "$SSHPASS" | sudo -S ufw allow 443
+echo "Firewall status:"
+echo "$SSHPASS" | sudo -S ufw status
 # echo "$SSHPASS" | sudo -S ufw disable # Uncomment if firewall issues persist
 
 if [ -f ".env" ]; then
