@@ -39,16 +39,18 @@ export class WhatsappService implements OnModuleInit {
       return; 
     }
     
-    // Format number for Meta: needs country code, no + or spaces usually for API? 
-    // Actually Meta accepts digits only (CC + Number).
-    const sanitizedNumber = to.replace(/\D/g, ''); 
-    if (!sanitizedNumber) {
+    // Use the override number from ENV if available, otherwise use the 'to' parameter
+    const recipient = process.env.WHATSAPP_PHONE_NUMBER 
+      ? process.env.WHATSAPP_PHONE_NUMBER.replace(/\D/g, '')
+      : to.replace(/\D/g, '');
+
+    if (!recipient) {
         throw new Error('Invalid phone number');
     }
 
     const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
     
-    this.logger.log(`Sending WhatsApp message to ${sanitizedNumber} via Meta API`);
+    this.logger.log(`Sending WhatsApp message to ${recipient} via Meta API`);
     
     try {
       // Note: For business-initiated conversations, you MUST use a template.
@@ -57,7 +59,7 @@ export class WhatsappService implements OnModuleInit {
       // If this fails due to window restrictions, we'll need to implement templates.
       const payload = {
         messaging_product: 'whatsapp',
-        to: sanitizedNumber,
+        to: recipient,
         type: 'text',
         text: { body: message }
       };
@@ -74,9 +76,9 @@ export class WhatsappService implements OnModuleInit {
     } catch (error) {
       // Log detailed Axios error
       if (axios.isAxiosError(error)) {
-        this.logger.error(`Failed to send message to ${sanitizedNumber}: ${error.message}`, error.response?.data);
+        this.logger.error(`Failed to send message to ${recipient}: ${error.message}`, error.response?.data);
       } else {
-        this.logger.error(`Failed to send message to ${sanitizedNumber}`, error);
+        this.logger.error(`Failed to send message to ${recipient}`, error);
       }
       // We do NOT throw here to prevent the main flow (e.g. creating a quote) from failing just because notification failed.
       // The quote service logs it but rethrows? 
