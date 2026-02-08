@@ -39,10 +39,8 @@ export class WhatsappService implements OnModuleInit {
       return; 
     }
     
-    // Use the override number from ENV if available, otherwise use the 'to' parameter
-    const recipient = process.env.WHATSAPP_PHONE_NUMBER 
-      ? process.env.WHATSAPP_PHONE_NUMBER.replace(/\D/g, '')
-      : to.replace(/\D/g, '');
+    // Use the 'to' parameter directly
+    const recipient = to.replace(/\D/g, '');
 
     if (!recipient) {
         throw new Error('Invalid phone number');
