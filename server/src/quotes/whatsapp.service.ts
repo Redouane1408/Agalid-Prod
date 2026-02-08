@@ -32,6 +32,58 @@ export class WhatsappService implements OnModuleInit {
     this.logger.log('WhatsApp (Meta) Client Initialized');
   }
 
+  async sendTemplate(to: string, templateName: string, languageCode: string, parameters: any[]) {
+    if (!this.isEnabled) {
+      this.logger.warn('WhatsApp service is disabled or not initialized.');
+      return; 
+    }
+    
+    const recipient = to.replace(/\D/g, '');
+
+    if (!recipient) {
+        throw new Error('Invalid phone number');
+    }
+
+    const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
+    
+    this.logger.log(`Sending WhatsApp Template '${templateName}' to ${recipient} via Meta API`);
+    
+    try {
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: recipient,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components: [
+            {
+              type: 'body',
+              parameters: parameters
+            }
+          ]
+        }
+      };
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      this.logger.log(`Template Message sent successfully. ID: ${response.data.messages?.[0]?.id}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        this.logger.error(`Failed to send template to ${recipient}: ${error.message}`, error.response?.data);
+      } else {
+        this.logger.error(`Failed to send template to ${recipient}`, error);
+      }
+      throw error;
+    }
+  }
+
   async sendMessage(to: string, message: string) {
     if (!this.isEnabled) {
       this.logger.warn('WhatsApp service is disabled or not initialized.');

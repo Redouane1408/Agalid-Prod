@@ -132,11 +132,20 @@ export class QuotesService {
     }
 
     const to = quote.request.phone;
-    const text = `Bonjour ${quote.request.name},\n\nVotre devis Agalid est prêt.\nTotal: ${quote.totalMad} MAD\nPanneaux: ${quote.panelCount}\nPuissance: ${quote.systemKw} kW\n\nMerci de votre confiance.`;
+    
+    // Template data (Must match the 'quote_notification' template in Meta)
+    const templateName = 'quote_notification';
+    const languageCode = 'fr'; // Or 'en_US' etc.
+    const parameters = [
+      { type: 'text', text: quote.request.name },
+      { type: 'text', text: quote.totalMad.toString() },
+      { type: 'text', text: quote.panelCount.toString() },
+      { type: 'text', text: quote.systemKw.toString() }
+    ];
     
     try {
       this.log('Sending WhatsApp message via WhatsappService...');
-      await this.whatsappService.sendMessage(to, text);
+      await this.whatsappService.sendTemplate(to, templateName, languageCode, parameters);
       
       this.log('WhatsApp sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
