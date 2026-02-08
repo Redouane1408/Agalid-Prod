@@ -19,8 +19,8 @@ export class WhatsappService implements OnModuleInit {
         return;
     }
 
-    this.accessToken = process.env.META_ACCESS_TOKEN;
-    this.phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+    this.accessToken = process.env.META_ACCESS_TOKEN || '';
+    this.phoneNumberId = process.env.META_PHONE_NUMBER_ID || '';
 
     if (!this.accessToken || !this.phoneNumberId) {
         this.logger.error('WhatsApp Meta credentials (ACCESS_TOKEN/PHONE_NUMBER_ID) missing');
