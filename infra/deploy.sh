@@ -63,14 +63,20 @@ else
 fi
 
 # Run Docker Compose (with sudo if needed)
+DOWN_CMD="$DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down"
+if [ "$RESET_DB" == "true" ]; then
+    echo "⚠️ RESET_DB is set to true. Wiping database volumes..."
+    DOWN_CMD="$DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down -v"
+fi
+
 if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down
+    $DOWN_CMD
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down
+    echo "$SSHPASS" | sudo -S $DOWN_CMD
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
 fi
 
