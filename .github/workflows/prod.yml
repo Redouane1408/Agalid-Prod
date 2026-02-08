@@ -155,8 +155,6 @@ jobs:
                 chmod +x infra/deploy.sh
                 # Export SSHPASS so deploy.sh can use it for sudo
                 export SSHPASS='${{ secrets.PASSWORD }}'
-                # FORCE DB RESET FOR PASSWORD CHANGE
-                export RESET_DB=true
                 bash infra/deploy.sh
               else
                 echo "❌ Error: infra/deploy.sh not found!"
