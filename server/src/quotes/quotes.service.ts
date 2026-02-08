@@ -11,7 +11,12 @@ export class QuotesService {
     const logFile = path.join(process.cwd(), 'debug.log');
     const timestamp = new Date().toISOString();
     const line = `[${timestamp}] ${message} ${data ? JSON.stringify(data) : ''}\n`;
-    fs.appendFileSync(logFile, line);
+    console.log(line); // Also log to console for Docker logs
+    try {
+      fs.appendFileSync(logFile, line);
+    } catch (err) {
+      console.error('Failed to write to debug.log', err);
+    }
   }
 
   constructor(
@@ -97,7 +102,8 @@ export class QuotesService {
       } else {
         this.log('Email send failed', { error: e });
       }
-      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+      // Do NOT mark as SENT if it failed
+      throw e; // Rethrow to let the controller handle it (or at least fail the request)
     }
   }
 
@@ -131,7 +137,8 @@ export class QuotesService {
       } else {
         this.log('WhatsApp send failed', { error: e });
       }
-      // Don't fail the request, just log
+      // Do NOT mark as SENT if it failed
+      throw e;
     }
   }
 }
