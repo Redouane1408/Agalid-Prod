@@ -1,11 +1,13 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import * as Twilio from 'twilio';
+import axios from 'axios';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit {
-  private client: Twilio.Twilio;
   private logger = new Logger(WhatsappService.name);
   private isEnabled = false;
+  private accessToken: string;
+  private phoneNumberId: string;
+  private apiVersion = 'v17.0'; // Or latest stable version
 
   constructor() {
     // Client will be initialized in onModuleInit
@@ -17,52 +19,70 @@ export class WhatsappService implements OnModuleInit {
         return;
     }
 
-    const accountSid = process.env.WHATSAPP_SID;
-    const authToken = process.env.WHATSAPP_TOKEN;
+    this.accessToken = process.env.META_ACCESS_TOKEN;
+    this.phoneNumberId = process.env.META_PHONE_NUMBER_ID;
 
-    if (!accountSid || !authToken) {
-        this.logger.error('WhatsApp credentials (SID/Token) missing');
+    if (!this.accessToken || !this.phoneNumberId) {
+        this.logger.error('WhatsApp Meta credentials (ACCESS_TOKEN/PHONE_NUMBER_ID) missing');
+        // Do not enable if credentials are missing
         return;
     }
 
-    try {
-      this.client = Twilio(accountSid, authToken);
-      this.isEnabled = true;
-      this.logger.log('WhatsApp (Twilio) Client Initialized');
-    } catch (error) {
-      this.logger.error('Failed to initialize Twilio client', error);
-    }
+    this.isEnabled = true;
+    this.logger.log('WhatsApp (Meta) Client Initialized');
   }
 
   async sendMessage(to: string, message: string) {
     if (!this.isEnabled) {
       this.logger.warn('WhatsApp service is disabled or not initialized.');
-      throw new Error('WhatsApp service disabled');
+      // Don't throw error to avoid breaking the flow if WhatsApp is just disabled
+      return; 
     }
     
-    // Format number for Twilio: needs + prefix, no spaces
-    // Assuming 'to' comes in various formats, sanitize it.
-    // Twilio for WhatsApp usually requires "whatsapp:" prefix for sender and receiver
-    const sanitizedNumber = to.replace(/\D/g, ''); // Remove non-digits
+    // Format number for Meta: needs country code, no + or spaces usually for API? 
+    // Actually Meta accepts digits only (CC + Number).
+    const sanitizedNumber = to.replace(/\D/g, ''); 
     if (!sanitizedNumber) {
         throw new Error('Invalid phone number');
     }
 
-    const receiver = `whatsapp:+${sanitizedNumber}`;
-    const sender = `whatsapp:${process.env.WHATSAPP_PHONE_NUMBER || '+14155238886'}`; // Use env or Twilio sandbox default
-
-    this.logger.log(`Sending WhatsApp message to ${receiver} from ${sender}`);
+    const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
+    
+    this.logger.log(`Sending WhatsApp message to ${sanitizedNumber} via Meta API`);
     
     try {
-      const response = await this.client.messages.create({
-        body: message,
-        from: sender,
-        to: receiver
+      // Note: For business-initiated conversations, you MUST use a template.
+      // If a user has messaged you within 24h, you can use text.
+      // We will try sending 'text' type first as it's the direct replacement.
+      // If this fails due to window restrictions, we'll need to implement templates.
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: sanitizedNumber,
+        type: 'text',
+        text: { body: message }
+      };
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        }
       });
-      this.logger.log(`Message sent successfully. SID: ${response.sid}`);
-      return response;
+
+      this.logger.log(`Message sent successfully. ID: ${response.data.messages?.[0]?.id}`);
+      return response.data;
     } catch (error) {
-      this.logger.error(`Failed to send message to ${receiver}`, error);
+      // Log detailed Axios error
+      if (axios.isAxiosError(error)) {
+        this.logger.error(`Failed to send message to ${sanitizedNumber}: ${error.message}`, error.response?.data);
+      } else {
+        this.logger.error(`Failed to send message to ${sanitizedNumber}`, error);
+      }
+      // We do NOT throw here to prevent the main flow (e.g. creating a quote) from failing just because notification failed.
+      // The quote service logs it but rethrows? 
+      // Wait, in quotes.service.ts we decided to rethrow to show error to user?
+      // If so, we should throw. But usually notification failure shouldn't rollback a DB transaction unless critical.
+      // The user previously complained about "ok": true when it didn't work. So we should throw.
       throw error;
     }
   }

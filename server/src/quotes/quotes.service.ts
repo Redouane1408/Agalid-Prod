@@ -8,7 +8,16 @@ import * as path from 'path';
 @Injectable()
 export class QuotesService {
   private log(message: string, data?: unknown) {
-    const logFile = path.join(process.cwd(), 'debug.log');
+    const logDir = path.join(process.cwd(), 'logs');
+    if (!fs.existsSync(logDir)) {
+      try {
+        fs.mkdirSync(logDir, { recursive: true });
+      } catch (err) {
+        console.error('Failed to create logs directory', err);
+        return;
+      }
+    }
+    const logFile = path.join(logDir, 'debug.log');
     const timestamp = new Date().toISOString();
     const line = `[${timestamp}] ${message} ${data ? JSON.stringify(data) : ''}\n`;
     console.log(line); // Also log to console for Docker logs

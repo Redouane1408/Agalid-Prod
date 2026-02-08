@@ -22,8 +22,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Removed host volume mount for debug.log to avoid "Is a directory" errors
-    # Logging will be done to stdout/stderr
+    volumes:
+      - ../server/logs:/app/logs
+    # Logging will be done to stdout/stderr and /app/logs/debug.log
     # Port 4000 is internal, proxy will route to it
 
   frontend:
