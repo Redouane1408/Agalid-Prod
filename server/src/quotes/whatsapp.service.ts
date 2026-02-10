@@ -32,7 +32,7 @@ export class WhatsappService implements OnModuleInit {
     this.logger.log('WhatsApp (Meta) Client Initialized');
   }
 
-  async sendTemplate(to: string, templateName: string, languageCode: string, parameters: any[]) {
+  async sendTemplate(to: string, templateName: string, languageCode: string, parameters: Array<Record<string, unknown>>) {
     if (!this.isEnabled) {
       this.logger.warn('WhatsApp service is disabled or not initialized.');
       return; 
