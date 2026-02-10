@@ -53,7 +53,7 @@ export class QuotesService {
     const req = await this.prisma.clientRequest.findUnique({ where: { id: requestId } });
     if (!req) throw new NotFoundException('Request not found');
     const calc = this.calculate({ monthlyConsumption: req.monthlyConsumption, peakSunHours: req.peakSunHours });
-    return this.prisma.quote.create({
+    const quote = await this.prisma.quote.create({
       data: {
         requestId: req.id,
         totalMad: Math.round(calc.systemCost),
@@ -62,6 +62,14 @@ export class QuotesService {
         status: 'DRAFT',
       },
     });
+
+    // Automatically trigger WhatsApp sending
+    // We don't await this to ensure the response is fast, but we log errors
+    this.sendWhatsApp(quote.id).catch(err => {
+      this.log('Failed to auto-send WhatsApp after creation', err);
+    });
+
+    return quote;
   }
 
   async sendEmail(quoteId: number) {

@@ -19,7 +19,7 @@ export class QuotesController {
 
   @Post(':id/send-whatsapp')
   async sendWhatsapp(@Param('id') id: string) {
-    this.quotesService.sendWhatsApp(Number(id)).catch(() => {});
+    await this.quotesService.sendWhatsApp(Number(id));
     return { ok: true };
   }
 }

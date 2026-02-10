@@ -93,20 +93,24 @@ export default function Home() {
   const handleSendEmail = async () => {
     if (!quoteId) return;
     try {
-      await fetch(`/api/quotes/${quoteId}/send-email`, { method: 'POST' });
+      const res = await fetch(`/api/quotes/${quoteId}/send-email`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to send email');
       alert('Email envoyé');
     } catch (e) {
       console.error('Email failed', e);
+      alert('Échec de l\'envoi Email.');
     }
   };
 
   const handleSendWhatsApp = async () => {
     if (!quoteId) return;
     try {
-      await fetch(`/api/quotes/${quoteId}/send-whatsapp`, { method: 'POST' });
+      const res = await fetch(`/api/quotes/${quoteId}/send-whatsapp`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to send WhatsApp');
       alert('WhatsApp envoyé');
     } catch (e) {
       console.error('WhatsApp failed', e);
+      alert('Échec de l\'envoi WhatsApp. Vérifiez que la configuration est correcte (paiement Meta, etc.).');
     }
   };
 
