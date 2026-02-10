@@ -19,8 +19,8 @@ export class WhatsappService implements OnModuleInit {
         return;
     }
 
-    this.accessToken = process.env.META_ACCESS_TOKEN || '';
-    this.phoneNumberId = process.env.META_PHONE_NUMBER_ID || '';
+    this.accessToken = (process.env.META_ACCESS_TOKEN || '').trim();
+    this.phoneNumberId = (process.env.META_PHONE_NUMBER_ID || '').trim();
 
     if (!this.accessToken || !this.phoneNumberId) {
         this.logger.error('WhatsApp Meta credentials (ACCESS_TOKEN/PHONE_NUMBER_ID) missing');
@@ -76,7 +76,10 @@ export class WhatsappService implements OnModuleInit {
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        this.logger.error(`Failed to send template to ${recipient}: ${error.message}`, error.response?.data);
+        this.logger.error(
+          `Failed to send template to ${recipient}: ${error.message}`, 
+          JSON.stringify(error.response?.data || {})
+        );
       } else {
         this.logger.error(`Failed to send template to ${recipient}`, error);
       }
