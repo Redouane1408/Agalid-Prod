@@ -1,9 +1,15 @@
 {
     email orders@agalid.com
-m
-
-agalid.comail oragalid.comid.com
 }
 
-agalid.com, www.agalid.com {/a server:4000
-    @api reverse_proxy fron
+agalid.com, www.agalid.com, 197.201.240.218 {
+    encode gzip
+
+    handle /api* {
+        reverse_proxy server:4000
+    }
+
+    handle {
+        reverse_proxy frontend:80
+    }
+}
