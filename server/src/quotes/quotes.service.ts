@@ -59,6 +59,9 @@ export class QuotesService {
       monthlyConsumption: number;
       roofType: string;
       peakSunHours: number;
+      phone?: string;
+      address?: string;
+      email?: string;
     };
   }): string {
     const dzdFormatter = new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 });
@@ -183,6 +186,21 @@ export class QuotesService {
                 <span class="detail-label">Localisation</span>
                 <span class="detail-value">${quote.request.location}</span>
               </div>
+              ${quote.request.address ? `
+              <div class="detail-row">
+                <span class="detail-label">Adresse</span>
+                <span class="detail-value">${quote.request.address}</span>
+              </div>` : ''}
+              ${quote.request.phone ? `
+              <div class="detail-row">
+                <span class="detail-label">Téléphone</span>
+                <span class="detail-value">${quote.request.phone}</span>
+              </div>` : ''}
+              ${quote.request.email ? `
+              <div class="detail-row">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">${quote.request.email}</span>
+              </div>` : ''}
             </div>
 
             <div class="total-section">
@@ -289,9 +307,9 @@ export class QuotesService {
 
     const to = quote.request.phone;
     
-    // Updated Template: 'quote_detailed'
-    const templateName = 'quote_detailed';
-    const languageCode = 'fr';
+    // Use env-configurable template and language (defaults chosen for Meta)
+    const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'quote_detailed';
+    const languageCode = process.env.WHATSAPP_LANGUAGE || 'fr_FR';
     
     const dzdFormatter = new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 });
     const numFormatter = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
@@ -317,9 +335,9 @@ export class QuotesService {
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
     } catch (e: unknown) {
       if (e instanceof Error) {
-        this.log('WhatsApp send failed', { message: e.message });
+        this.log('WhatsApp send failed', { message: e.message, meta: { templateName, languageCode } });
       } else {
-        this.log('WhatsApp send failed', { error: e });
+        this.log('WhatsApp send failed', { error: e, meta: { templateName, languageCode } });
       }
       // Do NOT mark as SENT if it failed
       throw e;
