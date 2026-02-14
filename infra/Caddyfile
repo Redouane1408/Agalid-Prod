@@ -3,5 +3,9 @@
 }
 
 agalid.com, www.agalid.com {
+    @api {
+        path /api/*
+    }
+    reverse_proxy @api http://server:4000
     reverse_proxy http://frontend:80
 }
