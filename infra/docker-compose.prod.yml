@@ -21,6 +21,11 @@ services:
     networks: [web]
     env_file:
       - production.env
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:4000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,6 +33,8 @@ services:
       - ../server/logs:/app/logs
     # Logging will be done to stdout/stderr and /app/logs/debug.log
     # Port 4000 is internal, proxy will route to it
+    ports:
+      - "4000:4000"
 
   frontend:
     build: 
