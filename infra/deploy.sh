@@ -62,6 +62,28 @@ else
     exit 1
 fi
 
+# Ensure no container is currently binding to ports 80/443 (old stack or stray containers)
+echo "Checking for containers binding to ports 80/443..."
+if groups $USER | grep &>/dev/null 'docker'; then
+    PORT_CONTAINERS=$(docker ps -q --filter "publish=80" --filter "publish=443")
+    if [ -n "$PORT_CONTAINERS" ]; then
+        echo "Stopping and removing containers on 80/443: $PORT_CONTAINERS"
+        docker stop $PORT_CONTAINERS || true
+        docker rm $PORT_CONTAINERS || true
+    else
+        echo "No containers currently binding 80/443."
+    fi
+else
+    PORT_CONTAINERS=$(echo "$SSHPASS" | sudo -S docker ps -q --filter "publish=80" --filter "publish=443")
+    if [ -n "$PORT_CONTAINERS" ]; then
+        echo "Stopping and removing containers on 80/443 (sudo): $PORT_CONTAINERS"
+        echo "$SSHPASS" | sudo -S docker stop $PORT_CONTAINERS || true
+        echo "$SSHPASS" | sudo -S docker rm $PORT_CONTAINERS || true
+    else
+        echo "No containers currently binding 80/443 (sudo check)."
+    fi
+fi
+
 # Project names (stack names)
 OLD_STACK="${OLD_STACK:-agalid}"
 STACK_NAME="${STACK_NAME:-agalid_v2}"
