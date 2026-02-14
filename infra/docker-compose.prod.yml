@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:16
     restart: always
+    networks: [web]
     env_file:
       - production.env
     volumes:
@@ -17,6 +18,7 @@ services:
   server:
     build: ../server
     restart: always
+    networks: [web]
     env_file:
       - production.env
     depends_on:
@@ -32,6 +34,7 @@ services:
       context: ..
       dockerfile: Dockerfile
     restart: always
+    networks: [web]
     depends_on:
       - server
     # Port 80 is internal, proxy will route to it
@@ -39,6 +42,7 @@ services:
   proxy:
     image: caddy:2
     restart: always
+    networks: [web]
     ports:
       - "80:80"
       - "443:443"
@@ -53,6 +57,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     restart: unless-stopped
+    networks: [web]
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@agalid.com
       PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
@@ -65,3 +70,6 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+networks:
+  web:
+    driver: bridge
