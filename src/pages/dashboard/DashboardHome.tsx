@@ -9,7 +9,7 @@ import {
   Tooltip, 
   ResponsiveContainer
 } from 'recharts';
-import { Zap, Sun, Battery, ArrowUpRight, ArrowDownRight, TrendingUp, Loader2, CloudSun, ShieldCheck } from 'lucide-react';
+import { Zap, Sun, Battery, ArrowUpRight, ArrowDownRight, TrendingUp, Loader2, ShieldCheck } from 'lucide-react';
 import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,11 +39,6 @@ interface EnergyMix {
   solar: number;
   grid: number;
   battery: number;
-}
-
-interface WeatherForecast {
-  time: string;
-  irradiance: number;
 }
 
 const colorVariants: Record<ColorVariantKey, { bg: string; text: string; icon: string }> = {
@@ -98,8 +93,7 @@ export default function DashboardHome() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [productionData, setProductionData] = useState<ProductionPoint[]>([]);
   const [energyMix, setEnergyMix] = useState<EnergyMix | null>(null);
-  const [weather, setWeather] = useState<WeatherForecast[] | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ role?: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,20 +102,18 @@ export default function DashboardHome() {
 
     const fetchData = async () => {
       try {
-        const [statsRes, historyRes, mixRes, weatherRes] = await Promise.all([
+        const [statsRes, historyRes, mixRes] = await Promise.all([
           api.get<DashboardStats>('/dashboard/stats'),
           api.get<ProductionPoint[]>('/dashboard/production'),
-          api.get<EnergyMix>('/dashboard/mix'),
-          api.get<WeatherForecast[]>('/dashboard/weather')
+          api.get<EnergyMix>('/dashboard/mix')
         ]);
 
         setStats(statsRes.data);
         setProductionData(historyRes.data);
         setEnergyMix(mixRes.data);
-        setWeather(weatherRes.data);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching dashboard data:', error);
-        if (error.response?.status === 401) {
+        if (typeof error === 'object' && error && (error as { response?: { status?: number } }).response?.status === 401) {
           localStorage.removeItem('token');
           window.location.href = '/signin';
         }

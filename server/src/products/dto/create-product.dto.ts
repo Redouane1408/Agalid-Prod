@@ -23,7 +23,7 @@ export class CreateProductDto {
 
   @IsObject()
   @IsOptional()
-  specs?: Record<string, any>;
+  specs?: Record<string, unknown>;
 
   @IsNumber()
   @IsOptional()

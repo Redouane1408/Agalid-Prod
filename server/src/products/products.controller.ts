@@ -5,6 +5,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Prisma } from '@prisma/client';
 
 @Controller('products')
 export class ProductsController {
@@ -15,8 +16,7 @@ export class ProductsController {
     @Query('category') category?: string,
     @Query('search') search?: string,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const where: Prisma.ProductWhereInput = {};
     
     if (category && category !== 'All') {
       where.category = { name: category };
@@ -46,20 +46,24 @@ export class ProductsController {
   @Roles('ADMIN')
   @Post()
   async create(@Body() createProductDto: CreateProductDto) {
-    const { categoryId, ...rest } = createProductDto;
-    return this.productsService.create({
+    const { categoryId, specs, ...rest } = createProductDto;
+    const data: Prisma.ProductCreateInput = {
       ...rest,
+      ...(typeof specs !== 'undefined' ? { specs: specs as Prisma.InputJsonValue } : {}),
       category: { connect: { id: categoryId } },
-    } as any);
+    };
+    return this.productsService.create(data);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Put(':id')
   async update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    const { categoryId, ...rest } = updateProductDto;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data: any = { ...rest };
+    const { categoryId, specs, ...rest } = updateProductDto;
+    const data: Prisma.ProductUpdateInput = { 
+      ...rest,
+      ...(typeof specs !== 'undefined' ? { specs: specs as Prisma.InputJsonValue } : {}),
+    };
     if (categoryId) {
       data.category = { connect: { id: categoryId } };
     }

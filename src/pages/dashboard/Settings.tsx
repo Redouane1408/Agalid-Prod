@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, Bell, Moon, Sun } from 'lucide-react';
+import { User, Moon } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function Settings() {

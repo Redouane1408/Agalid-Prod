@@ -1,14 +1,13 @@
 import React from 'react';
-import { CalculatorForm, CalculatorResult, AIRecommendation, formatCurrency, generateQuoteId, calculateSolarOutput } from '../lib/utils';
+import { CalculatorForm, AIRecommendation, formatCurrency, generateQuoteId, calculateSolarOutput } from '../lib/utils';
 
 interface QuoteTemplateProps {
   id: string;
   data: CalculatorForm & { name: string; email: string; phone: string; address: string };
-  result: CalculatorResult;
   recommendation: AIRecommendation;
 }
 
-export const QuoteTemplate: React.FC<QuoteTemplateProps> = ({ id, data, result, recommendation }) => {
+export const QuoteTemplate: React.FC<QuoteTemplateProps> = ({ id, data, recommendation }) => {
   const quoteId = React.useMemo(() => generateQuoteId(), []);
   const date = new Date().toLocaleDateString('fr-FR');
   const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR');

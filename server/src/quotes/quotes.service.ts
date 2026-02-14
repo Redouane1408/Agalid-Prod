@@ -49,11 +49,21 @@ export class QuotesService {
     return { panelCount, systemKW, systemCost };
   }
 
-  private generateEmailTemplate(quote: any): string {
+  private generateEmailTemplate(quote: {
+    systemKw: number;
+    panelCount: number;
+    totalDa: number;
+    request: {
+      name: string;
+      location: string;
+      monthlyConsumption: number;
+      roofType: string;
+      peakSunHours: number;
+    };
+  }): string {
     const dzdFormatter = new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 });
     const numberFormatter = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
     const year = new Date().getFullYear();
-    const date = new Date().toLocaleDateString('fr-FR');
     
     // Estimate annual production (daily * 365)
     const dailyProd = (quote.systemKw * (quote.request.peakSunHours || 5)) * 0.85; 

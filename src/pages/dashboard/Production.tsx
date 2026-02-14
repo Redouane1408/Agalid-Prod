@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { Sun, Calendar, Download, RefreshCw } from 'lucide-react';
+import { Sun, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
 
 interface ProductionData {
@@ -26,7 +26,7 @@ export default function Production() {
       // In a real scenario, you'd pass the period to the API
       // const res = await api.get(`/dashboard/production?period=${period}`);
       const res = await api.get('/dashboard/production'); 
-      setData(res.data.map((d: any) => ({ time: d.time, value: d.prod })));
+      setData(res.data.map((d: { time: string; prod: number }) => ({ time: d.time, value: d.prod })));
     } catch (error) {
       console.error('Failed to fetch production data', error);
     } finally {

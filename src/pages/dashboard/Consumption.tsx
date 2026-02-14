@@ -24,7 +24,7 @@ export default function Consumption() {
     try {
       // Reusing production endpoint but mapping consumption if available, otherwise simulating
       const res = await api.get('/dashboard/production'); 
-      setData(res.data.map((d: any) => ({ time: d.time, value: d.cons || Math.random() * 2 })));
+      setData(res.data.map((d: { time: string; cons?: number }) => ({ time: d.time, value: d.cons ?? Math.random() * 2 })));
     } catch (error) {
       console.error('Failed to fetch consumption data', error);
     } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Search, Package, Loader2, X, Check, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, X, Save } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -12,7 +12,7 @@ interface Product {
   image: string;
   categoryId: number;
   category: { id: number; name: string };
-  specs: any;
+  specs: Record<string, unknown>;
 }
 
 interface Category {
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       await api.delete(`/products/${id}`);
       setProducts(products.filter(p => p.id !== id));
       toast.success('Produit supprimé');
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors de la suppression');
     }
   };
@@ -100,7 +100,7 @@ export default function AdminDashboard() {
     let specsJson;
     try {
       specsJson = JSON.parse(formData.specs);
-    } catch (error) {
+    } catch {
       toast.error('Format JSON invalide pour les spécifications');
       return;
     }

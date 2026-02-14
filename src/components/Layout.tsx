@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Home, Info, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Sun, Moon, Home, Info, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight, User as UserIcon, LogOut } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import Footer from './Footer';
@@ -17,7 +17,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  type User = { name?: string; role?: string } | null;
+  const [user, setUser] = useState<User>(null);
 
   useEffect(() => {
     const handleScroll = () => {

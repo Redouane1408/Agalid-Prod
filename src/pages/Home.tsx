@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import Hero from '@/components/landing/Hero';
@@ -29,7 +29,6 @@ export default function Home() {
   const [calcResult, setCalcResult] = useState<CalculatorResult | null>(null);
   const [recommendation, setRecommendation] = useState<AIRecommendation | null>(null);
   const [quoteId, setQuoteId] = useState<number | null>(null);
-  const quoteRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
 
   const derivedCalcResult = React.useMemo(() => {
@@ -244,7 +243,6 @@ export default function Home() {
           <QuoteTemplate 
             id="quote-template" 
             data={formData} 
-            result={calcResult} 
             recommendation={recommendation} 
           />
         )}
