@@ -1,8 +1,9 @@
+version: "3.8"
+
 services:
   postgres:
     image: postgres:16
     restart: always
-    networks: [web]
     env_file:
       - production.env
     volumes:
@@ -16,14 +17,8 @@ services:
   server:
     build: ../server
     restart: always
-    networks: [web]
     env_file:
       - production.env
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4000/api/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,15 +26,12 @@ services:
       - ../server/logs:/app/logs
     # Logging will be done to stdout/stderr and /app/logs/debug.log
     # Port 4000 is internal, proxy will route to it
-    ports:
-      - "4000:4000"
 
   frontend:
     build: 
       context: ..
       dockerfile: Dockerfile
     restart: always
-    networks: [web]
     depends_on:
       - server
     # Port 80 is internal, proxy will route to it
@@ -47,7 +39,6 @@ services:
   proxy:
     image: caddy:2
     restart: always
-    networks: [web]
     ports:
       - "80:80"
       - "443:443"
@@ -62,7 +53,6 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     restart: unless-stopped
-    networks: [web]
     env_file:
       - production.env
     environment:
@@ -77,6 +67,3 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
-networks:
-  web:
-    driver: bridge
