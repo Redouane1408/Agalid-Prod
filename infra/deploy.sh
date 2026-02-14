@@ -62,36 +62,41 @@ else
     exit 1
 fi
 
+# Project names (stack names)
+OLD_STACK="${OLD_STACK:-agalid}"
+STACK_NAME="${STACK_NAME:-agalid_v2}"
+
 # Run Docker Compose (with sudo if needed)
-DOWN_CMD="$DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down"
+DOWN_CMD="$DOCKER_COMPOSE_CMD -p $OLD_STACK -f infra/docker-compose.prod.yml down"
 if [ "$RESET_DB" == "true" ]; then
     echo "⚠️ RESET_DB is set to true. Wiping database volumes..."
-    DOWN_CMD="$DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down -v"
+    DOWN_CMD="$DOCKER_COMPOSE_CMD -p $OLD_STACK -f infra/docker-compose.prod.yml down -v"
 fi
 
 if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
     $DOWN_CMD
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
+    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml up -d --build
+    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
     echo "Containers status:"
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml ps
+    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml ps
     echo "Recent logs (server):"
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=150 server || true
+    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=150 server || true
     echo "Recent logs (proxy):"
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
+    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
     echo "$SSHPASS" | sudo -S $DOWN_CMD
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml up -d --build
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
     echo "Containers status:"
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml ps
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml ps
     echo "Recent logs (server):"
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=150 server || true
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=150 server || true
     echo "Recent logs (proxy):"
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
 fi
 
-echo "Deployment complete! Check status with: docker compose -f infra/docker-compose.prod.yml ps"
+echo "Deployment complete! Current stack: $STACK_NAME"
+echo "Check status with: docker compose -p $STACK_NAME -f infra/docker-compose.prod.yml ps"
