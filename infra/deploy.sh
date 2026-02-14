@@ -62,63 +62,22 @@ else
     exit 1
 fi
 
-# Ensure no container is currently binding to ports 80/443 (old stack or stray containers)
-echo "Checking for containers binding to ports 80/443..."
-if groups $USER | grep &>/dev/null 'docker'; then
-    PORT_CONTAINERS=$(docker ps -q --filter "publish=80" --filter "publish=443")
-    if [ -n "$PORT_CONTAINERS" ]; then
-        echo "Stopping and removing containers on 80/443: $PORT_CONTAINERS"
-        docker stop $PORT_CONTAINERS || true
-        docker rm $PORT_CONTAINERS || true
-    else
-        echo "No containers currently binding 80/443."
-    fi
-else
-    PORT_CONTAINERS=$(echo "$SSHPASS" | sudo -S docker ps -q --filter "publish=80" --filter "publish=443")
-    if [ -n "$PORT_CONTAINERS" ]; then
-        echo "Stopping and removing containers on 80/443 (sudo): $PORT_CONTAINERS"
-        echo "$SSHPASS" | sudo -S docker stop $PORT_CONTAINERS || true
-        echo "$SSHPASS" | sudo -S docker rm $PORT_CONTAINERS || true
-    else
-        echo "No containers currently binding 80/443 (sudo check)."
-    fi
-fi
-
-# Project names (stack names)
-OLD_STACK="${OLD_STACK:-agalid}"
-STACK_NAME="${STACK_NAME:-agalid_v2}"
-
 # Run Docker Compose (with sudo if needed)
-DOWN_CMD="$DOCKER_COMPOSE_CMD -p $OLD_STACK -f infra/docker-compose.prod.yml down"
+DOWN_CMD="$DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down"
 if [ "$RESET_DB" == "true" ]; then
     echo "⚠️ RESET_DB is set to true. Wiping database volumes..."
-    DOWN_CMD="$DOCKER_COMPOSE_CMD -p $OLD_STACK -f infra/docker-compose.prod.yml down -v"
+    DOWN_CMD="$DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml down -v"
 fi
 
 if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
     $DOWN_CMD
-    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml up -d --build
-    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
-    echo "Containers status:"
-    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml ps
-    echo "Recent logs (server):"
-    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=150 server || true
-    echo "Recent logs (proxy):"
-    $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
+    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
     echo "$SSHPASS" | sudo -S $DOWN_CMD
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml up -d --build
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
-    echo "Containers status:"
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml ps
-    echo "Recent logs (server):"
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=150 server || true
-    echo "Recent logs (proxy):"
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -p $STACK_NAME -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
 fi
 
-echo "Deployment complete! Current stack: $STACK_NAME"
-echo "Check status with: docker compose -p $STACK_NAME -f infra/docker-compose.prod.yml ps"
+echo "Deployment complete! Check status with: docker compose -f infra/docker-compose.prod.yml ps"

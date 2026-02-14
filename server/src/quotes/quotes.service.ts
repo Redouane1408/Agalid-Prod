@@ -38,13 +38,18 @@ export class QuotesService {
     peakSunHours: number;
   }) {
     const systemEfficiency = 0.85;
-    const panelWattage = 400;
-    const systemCostPerKW = 180000; // Adjusted for DZD (approx 1200 USD/kW)
+    const panelWattageW = 400; // 400 W par panneau
+    const panelWattageKW = panelWattageW / 1000; // 0.4 kW
+    const systemCostPerKW = 180000; // DZD/kW
+    // Consommation journalière (kWh/jour)
     const dailyConsumption = form.monthlyConsumption / 30;
-    const requiredDailyProduction = dailyConsumption / systemEfficiency;
-    const requiredWattage = requiredDailyProduction / form.peakSunHours;
-    const panelCount = Math.ceil(requiredWattage / panelWattage);
-    const systemKW = (panelCount * panelWattage) / 1000;
+    // Puissance système requise (kW) : énergie/(heures * PR)
+    const requiredSystemKw = dailyConsumption / Math.max(1, form.peakSunHours * systemEfficiency);
+    // Nombre de panneaux nécessaire
+    const panelCount = Math.max(1, Math.ceil(requiredSystemKw / panelWattageKW));
+    // Taille du système dimensionné (kW)
+    const systemKW = panelCount * panelWattageKW;
+    // Coût estimé
     const systemCost = systemKW * systemCostPerKW;
     return { panelCount, systemKW, systemCost };
   }
