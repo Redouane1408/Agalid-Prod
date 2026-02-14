@@ -176,16 +176,44 @@ jobs:
           exit 1
 
       - name: Post-deploy Smoke Test
+        env:
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL }}
+          HOST: ${{ secrets.HOST }}
+          HOST_IP: ${{ secrets.HOST_IP }}
         run: |
-          echo "🔎 Polling https://agalid.com/api/health ..."
-          for i in {1..20}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://agalid.com/api/health || true)
-            echo "Attempt $i -> $STATUS"
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ API health is OK"
-              exit 0
+          set -e
+          urls=()
+          if [ -n "$PUBLIC_URL" ]; then
+            urls+=("${PUBLIC_URL%/}/api/health")
+            # Try http fallback if PUBLIC_URL starts with https
+            if echo "$PUBLIC_URL" | grep -qi '^https://'; then
+              urls+=("http://$(echo "$PUBLIC_URL" | sed -e 's#^https\?://##' -e 's#/$##')/api/health")
             fi
-            sleep 6
+          else
+            urls+=("https://agalid.com/api/health")
+          fi
+          if [ -n "$HOST_IP" ]; then
+            urls+=("http://$HOST_IP/api/health")
+          fi
+          # If HOST looks like IP, also try it
+          if echo "$HOST" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+            urls+=("http://$HOST/api/health")
+          fi
+          
+          echo "🔎 Polling health endpoints:"
+          printf ' - %s\n' "${urls[@]}"
+          
+          for url in "${urls[@]}"; do
+            echo "⏳ Checking $url ..."
+            for i in {1..20}; do
+              STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" "$url" || true)
+              echo "Attempt $i -> $STATUS"
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ API health OK at $url"
+                exit 0
+              fi
+              sleep 6
+            done
           done
-          echo "❌ API health endpoint not responding with 200"
+          echo "❌ No health endpoint responded with 200"
           exit 1

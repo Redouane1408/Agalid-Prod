@@ -1,11 +1,9 @@
 {
     email orders@agalid.com
+m
+
+agalid.comail oragalid.comid.com
 }
 
-agalid.com, www.agalid.com {
-    @api {
-        path /api/*
-    }
-    reverse_proxy @api http://server:4000
-    reverse_proxy http://frontend:80
-}
+agalid.com, www.agalid.com {/a server:4000
+    @api reverse_proxy fron
