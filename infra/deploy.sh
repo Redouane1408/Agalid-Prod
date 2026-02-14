@@ -74,12 +74,24 @@ if groups $USER | grep &>/dev/null 'docker'; then
     $DOWN_CMD
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
+    echo "Containers status:"
+    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml ps
+    echo "Recent logs (server):"
+    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=150 server || true
+    echo "Recent logs (proxy):"
+    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
     echo "$SSHPASS" | sudo -S $DOWN_CMD
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
+    echo "Containers status:"
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml ps
+    echo "Recent logs (server):"
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=150 server || true
+    echo "Recent logs (proxy):"
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml logs --tail=50 proxy || true
 fi
 
 echo "Deployment complete! Check status with: docker compose -f infra/docker-compose.prod.yml ps"
