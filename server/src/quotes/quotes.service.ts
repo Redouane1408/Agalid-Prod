@@ -308,7 +308,7 @@ export class QuotesService {
     const to = quote.request.phone;
     
     // Use env-configurable template and language (defaults chosen for Meta)
-    const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'quote_detailed';
+    const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'quote_notification';
     const languageCode = process.env.WHATSAPP_LANGUAGE || 'fr_FR';
     
     const dzdFormatter = new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 });
