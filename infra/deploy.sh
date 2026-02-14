@@ -73,11 +73,13 @@ if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
     $DOWN_CMD
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
+    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
     echo "$SSHPASS" | sudo -S $DOWN_CMD
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml exec -T server npx prisma migrate deploy
 fi
 
 echo "Deployment complete! Check status with: docker compose -f infra/docker-compose.prod.yml ps"
