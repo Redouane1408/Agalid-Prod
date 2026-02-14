@@ -42,31 +42,41 @@ export interface AIRecommendation {
 }
 
 export function calculateSolarOutput(form: CalculatorForm): CalculatorResult {
-  const systemEfficiency = 0.85; // 85% efficiency
-  const panelWattage = 400; // 400W panels
-  const panelArea = 2.2; // 2.2 sqm per panel
-  const systemCostPerKW = 1200; // Cost per KW installed
-  
+  const systemEfficiency = 0.85; // performance ratio
+  const panelWattageW = 400; // 400 W per panel
+  const panelWattageKW = panelWattageW / 1000; // 0.4 kW
+  const panelArea = 2.2; // m² per panel
+  const systemCostPerKW = 180000; // DZD/kW (approx)
+  const dzdPerKwh = 15; // conservative average tariff for estimation
+
+  // Daily energy need (kWh/day)
   const dailyConsumption = form.monthlyConsumption / 30;
-  const requiredDailyProduction = dailyConsumption / systemEfficiency;
-  const requiredWattage = requiredDailyProduction / form.peakSunHours;
-  
-  const panelCount = Math.ceil(requiredWattage / panelWattage);
-  const systemKW = (panelCount * panelWattage) / 1000;
+
+  // Required system size (kW) to meet daily need:
+  // energy = size(kW) * sunHours * PR  =>  size = energy / (sunHours * PR)
+  const requiredSystemKw = dailyConsumption / Math.max(1, form.peakSunHours * systemEfficiency);
+
+  // Panel count from kW requirement
+  const panelCount = Math.max(1, Math.ceil(requiredSystemKw / panelWattageKW));
+  const systemKW = panelCount * panelWattageKW;
   const recommendedVoltage = panelCount <= 10 ? 12 : panelCount <= 20 ? 24 : 48;
   const installationArea = panelCount * panelArea;
-  const monthlyProduction = requiredDailyProduction * 30;
-  
-  // Calculate system cost
+
+  // Estimated monthly production from designed system
+  const monthlyProduction = systemKW * form.peakSunHours * 30 * systemEfficiency; // kWh/month
+
+  // Cost scales with system size
   const systemCost = systemKW * systemCostPerKW;
-  
-  // Calculate payback period (assuming 15% savings on electricity bill)
-  const annualSavings = form.monthlyConsumption * 0.15 * 12 * 0.15; // 15% of bill is 15% savings
-  const paybackPeriod = systemCost / annualSavings;
-  
-  // CO2 reduction (1 kWh = 0.5 kg CO2)
-  const co2Reduction = monthlyProduction * 12 * 0.5; // kg per year
-  
+
+  // Annual savings estimate based on self-consumed production
+  const selfConsumptionRatio = 0.6;
+  const effectiveMonthly = Math.min(monthlyProduction * selfConsumptionRatio, form.monthlyConsumption);
+  const annualSavings = effectiveMonthly * 12 * dzdPerKwh;
+  const paybackPeriod = annualSavings > 0 ? systemCost / annualSavings : Infinity;
+
+  // CO2 reduction (1 kWh ≈ 0.5 kg CO2)
+  const co2Reduction = monthlyProduction * 12 * 0.5;
+
   return {
     recommendedVoltage,
     panelCount,
@@ -74,7 +84,8 @@ export function calculateSolarOutput(form: CalculatorForm): CalculatorResult {
     systemCost,
     paybackPeriod,
     co2Reduction,
-    recommendedSystem: systemKW <= 3 ? 'Small Residential' : systemKW <= 7 ? 'Medium Residential' : 'Large Commercial',
+    recommendedSystem:
+      systemKW <= 3 ? 'Small Residential' : systemKW <= 7 ? 'Medium Residential' : 'Large Commercial',
     installationArea,
     monthlyProduction
   };

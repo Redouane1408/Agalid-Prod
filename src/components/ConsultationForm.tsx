@@ -22,14 +22,14 @@ const stepSchema = [
   z.object({
     name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
     email: z.string().email('Email invalide'),
-    phone: z.string().min(10, 'Le téléphone doit contenir au moins 10 chiffres'),
+    phone: z.string().regex(/^(?:0|\+213)\s*[567](?:[\s.-]*\d){8}$/, 'Numéro invalide (ex: 0550 12 34 56 ou +213 550 12 34 56)'),
     address: z.string().min(5, 'L\'adresse doit contenir au moins 5 caractères'),
     clientType: z.enum(['Particulier', 'Entreprise', 'Industrie', 'Administration'], { message: 'Type de client requis' }),
   }),
   
   // Step 2: Energy Usage
   z.object({
-    monthlyConsumption: z.number().min(50, 'La consommation doit être d\'au moins 50 kWh').max(5000, 'Maximum 5000 kWh'),
+    monthlyConsumption: z.number().min(50, 'La consommation doit être d\'au moins 50 kWh').max(10000, 'Maximum 10000 kWh'),
     householdSize: z.number().min(1, 'Minimum 1 personne').max(20, 'Maximum 20 personnes'),
     energyUsagePattern: z.enum(['residential', 'commercial', 'industrial']),
     appliances: z.array(z.string()).min(1, 'Sélectionnez au moins un appareil'),
@@ -37,16 +37,16 @@ const stepSchema = [
   
   // Step 3: Property Details
   z.object({
-    roofArea: z.number().min(10, 'La surface doit être d\'au moins 10 m²').max(1000, 'Maximum 1000 m²'),
+    roofArea: z.number().min(10, 'La surface doit être d\'au moins 10 m²').max(5000, 'Maximum 5000 m²'),
     roofType: z.enum(['flat', 'sloped', 'mixed']),
     location: z.string().min(2, 'La localisation doit contenir au moins 2 caractères'),
-    peakSunHours: z.number().min(3, 'Minimum 3 heures').max(8, 'Maximum 8 heures'),
+    peakSunHours: z.number().min(2, 'Minimum 2 heures').max(10, 'Maximum 10 heures'),
     hasShading: z.boolean(),
   }),
   
   // Step 4: Budget and Preferences
   z.object({
-    budget: z.number().min(10000, 'Le budget doit être d\'au moins 10,000 MAD').max(1000000, 'Maximum 1,000,000 MAD'),
+    budget: z.number().min(50000, 'Le budget doit être d\'au moins 50,000 DA').max(10000000, 'Maximum 10,000,000 DA'),
   })
 ];
 
@@ -77,21 +77,21 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
     mode: 'onChange',
     shouldUnregister: false,
     defaultValues: {
-      name: 'Test User',
-      email: 'ricardoxvxv145@gmail.com',
-      phone: '+213674231032',
-      address: 'Casablanca',
-      clientType: 'Entreprise',
+      name: '',
+      email: '',
+      phone: '',
+      address: 'Alger',
+      clientType: 'Particulier',
       monthlyConsumption: 350,
       householdSize: 4,
-      energyUsagePattern: 'commercial',
-      appliances: ['Réfrigérateur', 'TV'],
+      energyUsagePattern: 'residential',
+      appliances: ['Réfrigérateur', 'TV', 'Éclairage'],
       roofArea: 60,
       roofType: 'flat',
-      location: 'Casablanca',
+      location: 'Alger',
       peakSunHours: 5.5,
       hasShading: false,
-      budget: 50000
+      budget: 100000
     }
   });
   useEffect(() => {
@@ -229,12 +229,21 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Téléphone
                 </label>
-                <input
-                  {...register('phone')}
-                  type="tel"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
-                  placeholder="+212 6 12 34 56 78"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <span className="text-gray-500 dark:text-gray-400 font-medium">+213</span>
+                  </div>
+                  <input
+                    value={watch('phone')?.replace(/^\+213/, '') || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      setValue('phone', val ? `+213${val}` : '', { shouldValidate: true });
+                    }}
+                    type="tel"
+                    className="w-full pl-16 pr-4 py-3 border border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent transition-colors"
+                    placeholder="5 XX XX XX XX"
+                  />
+                </div>
                 {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone.message}</p>}
               </div>
 
@@ -507,7 +516,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <DollarSign className="inline h-4 w-4 mr-1" />
-                  Budget disponible (MAD)
+                  Budget disponible (DA)
                 </label>
                 <input
                   {...register('budget', { valueAsNumber: true })}
@@ -526,7 +535,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
                   <p>• Consommation: {watch('monthlyConsumption') || 0} kWh/mois</p>
                   <p>• Surface du toit: {watch('roofArea') || 0} m²</p>
                   <p>• Localisation: {watch('location') || 'Non spécifiée'}</p>
-                  <p>• Budget: {watch('budget') ? `${watch('budget').toLocaleString('fr-MA')} MAD` : 'Non spécifié'}</p>
+                  <p>• Budget: {watch('budget') ? `${watch('budget').toLocaleString('fr-DZ')} DZD` : 'Non spécifié'}</p>
                 </div>
               </div>
             </div>
@@ -539,8 +548,8 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-wrap md:flex-nowrap overflow-x-auto max-w-full pr-1">
           {steps.map((s, idx) => {
             const Icon = s.icon;
             const active = idx === currentStep;
@@ -554,7 +563,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({ onComplete, onClose
             );
           })}
         </div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">Étape {currentStep + 1} / {steps.length}</div>
+        <div className="order-2 md:order-none w-full md:w-auto text-right text-sm text-gray-600 dark:text-gray-400">Étape {currentStep + 1} / {steps.length}</div>
       </div>
 
       {renderStepContent()}

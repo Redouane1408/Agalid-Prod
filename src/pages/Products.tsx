@@ -106,7 +106,7 @@ const Products = () => {
                 className={cn("px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
                   selectedCategory === 'All'
                     ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
+                    : "text-slate-700 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-transparent dark:hover:bg-white/10"
                 )}
               >
                 Tout voir
@@ -120,7 +120,7 @@ const Products = () => {
                     className={cn("flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
                       selectedCategory === cat.name
                         ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
+                        : "text-slate-700 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-transparent dark:hover:bg-white/10"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -141,7 +141,7 @@ const Products = () => {
                 className={cn("w-full pl-10 pr-4 py-2 rounded-xl outline-none transition-all",
                   isDark 
                     ? "bg-white/10 text-white placeholder-slate-500 focus:bg-white/15 border border-white/10 focus:border-emerald-500/50" 
-                    : "bg-slate-100 text-slate-900 placeholder-slate-400 focus:bg-white border border-slate-200 focus:border-emerald-500"
+                    : "bg-slate-100 text-slate-900 placeholder-slate-500 focus:bg-white border border-slate-200 focus:border-emerald-500"
                 )}
               />
             </div>
@@ -167,7 +167,7 @@ const Products = () => {
                     className={cn("group rounded-2xl overflow-hidden border transition-all duration-300",
                       isDark 
                         ? "bg-white/5 border-white/10 hover:border-emerald-500/30 hover:bg-white/10" 
-                        : "bg-white border-slate-200 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/5"
+                        : "bg-white border-slate-200 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-500/30"
                     )}
                   >
                     {/* Image */}

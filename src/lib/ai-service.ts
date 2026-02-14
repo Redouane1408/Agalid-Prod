@@ -37,14 +37,14 @@ export class AIService {
       }
       const openai = createOpenAI({ apiKey });
       const prompt = `
-        You are a solar energy expert at Agalid, a leading solar energy company in Morocco.
+        You are a solar energy expert at Agalid, a leading solar energy company in Algeria.
         Based on the following client information, provide a detailed recommendation:
         
         Client Profile:
         - Location: ${formData.location}
         - Monthly Consumption: ${formData.monthlyConsumption} kWh
         - Household Size: ${formData.householdSize} people
-        - Budget: ${formData.budget} MAD
+        - Budget: ${formData.budget} DZD
         - Energy Usage Pattern: ${formData.energyUsagePattern}
         - Roof Area: ${formData.roofArea} m²
         - Roof Type: ${formData.roofType}
@@ -53,8 +53,8 @@ export class AIService {
         
         Calculated System Requirements:
         - System Size: ${calculationResult.panelCount} panels (${(calculationResult.panelCount * 400 / 1000).toFixed(1)} kW)
-        - Estimated Cost: ${calculationResult.systemCost.toLocaleString('fr-MA')} MAD
-        - Annual Savings: ${calculationResult.estimatedSavings.toLocaleString('fr-MA')} MAD
+        - Estimated Cost: ${calculationResult.systemCost.toLocaleString('fr-DZ')} DZD
+        - Annual Savings: ${calculationResult.estimatedSavings.toLocaleString('fr-DZ')} DZD
         - Payback Period: ${calculationResult.paybackPeriod.toFixed(1)} years
         - CO2 Reduction: ${calculationResult.co2Reduction.toFixed(0)} kg/year
         
@@ -124,7 +124,7 @@ export class AIService {
         const base =
           "Je suis un assistant Agalid. Voici une réponse basée sur vos informations: ";
         const ctx = context.formData
-          ? `Localisation: ${context.formData.location}, Consommation: ${context.formData.monthlyConsumption} kWh, Budget: ${context.formData.budget} MAD. `
+          ? `Localisation: ${context.formData.location}, Consommation: ${context.formData.monthlyConsumption} kWh, Budget: ${context.formData.budget} DZD. `
           : '';
         return `${base}${ctx}Pour un devis précis, une visite technique est recommandée. Notre équipe peut vous accompagner pour choisir panneaux, onduleur et, si nécessaire, batterie.`;
       }

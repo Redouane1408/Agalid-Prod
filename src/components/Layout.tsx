@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Home, Info, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight } from 'lucide-react';
+import { Menu, X, Sun, Moon, Home, Info, Phone, LogIn, ShoppingBag, ArrowRight, ChevronRight, User as UserIcon, LogOut } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import Footer from './Footer';
+import { Toaster } from 'sonner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,14 +17,34 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  type User = { name?: string; role?: string } | null;
+  const [user, setUser] = useState<User>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    
+    // Check auth
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Invalid user data', e);
+      }
+    }
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/');
+  };
 
   const navigationItems = [
     { name: 'Accueil', href: '/', icon: Home, type: 'link' },
@@ -48,6 +69,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className={cn('min-h-screen transition-colors duration-300', isDark ? 'bg-[#0d1412] text-white' : 'bg-slate-50 text-gray-900')}>
+      <Toaster position="top-center" richColors theme={isDark ? 'dark' : 'light'} />
       {/* Navigation */}
       <motion.nav
         initial={{ y: -100 }}
@@ -109,12 +131,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
 
-              <Link 
-                to="/signin"
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors px-2"
-              >
-                Connexion
-              </Link>
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="flex items-center gap-2 group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 p-[2px]">
+                      <div className="w-full h-full rounded-full bg-white dark:bg-[#0A1210] flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {user.name?.split(' ')[0] || 'Compte'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Déconnexion"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  to="/signin"
+                  className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors px-2"
+                >
+                  Connexion
+                </Link>
+              )}
 
               <button 
                 onClick={() => {

@@ -17,6 +17,7 @@
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^11.0.2",
+    "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "^5.18.0",
@@ -37,6 +38,7 @@
     "pino": "^9.5.0",
     "pino-pretty": "^11.2.2",
     "reflect-metadata": "^0.2.2",
+    "sonner": "^2.0.7",
     "twilio": "^5.0.0"
   },
   "devDependencies": {

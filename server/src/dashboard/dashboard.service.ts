@@ -68,6 +68,26 @@ export class DashboardService {
            source = hasEnphase ? 'Enphase (Simulé)' : 'OpenMeteo';
         }
     }
+
+    // 3. Fallback to Quote Data if no integrations
+    if (productionValue === 0) {
+       const user = await this.prisma.user.findUnique({ where: { id: userId } });
+       if (user) {
+         const request = await this.prisma.clientRequest.findFirst({
+            where: { email: user.email },
+            include: { quotes: { orderBy: { createdAt: 'desc' }, take: 1 } }
+         });
+         
+         if (request && request.quotes.length > 0) {
+             const quote = request.quotes[0];
+             const systemKw = quote.systemKw;
+             // Estimate production based on system size
+             // Approx 4.5 kWh per kW installed per day in Algeria (avg)
+             productionValue = Math.round(systemKw * 4.5 * 10) / 10;
+             source = 'Estimation (Devis)';
+         }
+       }
+    }
     
     // Calculate Autonomy based on whatever production we have
     if (productionValue > 0) {
@@ -96,8 +116,8 @@ export class DashboardService {
          trend: 8 
        },
       savings: { 
-        value: Math.round(productionValue * 1.5), // Approx 1.5 MAD/kWh
-        unit: 'MAD', 
+        value: Math.round(productionValue * 5.4), // Approx 5.4 DZD/kWh (High tier)
+        unit: 'DZD', 
         trend: 15 
       },
     };
