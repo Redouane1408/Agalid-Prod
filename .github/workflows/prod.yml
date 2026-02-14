@@ -174,3 +174,18 @@ jobs:
           
           echo "❌ FATAL: Deployment failed after $MAX_RETRIES attempts."
           exit 1
+
+      - name: Post-deploy Smoke Test
+        run: |
+          echo "🔎 Polling https://agalid.com/api/health ..."
+          for i in {1..20}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://agalid.com/api/health || true)
+            echo "Attempt $i -> $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ API health is OK"
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "❌ API health endpoint not responding with 200"
+          exit 1
