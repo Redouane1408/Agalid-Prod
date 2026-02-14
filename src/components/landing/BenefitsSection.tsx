@@ -99,7 +99,7 @@ export default function BenefitsSection() {
               <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
                 <div>
                   <div className="text-sm text-gray-500">Économie Estimée</div>
-                  <div className="text-2xl font-bold text-[var(--color-secondary)]">15,400 MAD<span className="text-sm text-gray-400 font-normal">/an</span></div>
+                  <div className="text-2xl font-bold text-[var(--color-secondary)]">15,400 DZD<span className="text-sm text-gray-400 font-normal">/an</span></div>
                 </div>
                 <button className="px-6 py-3 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors">
                   Voir Détails

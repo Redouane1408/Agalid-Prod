@@ -169,7 +169,7 @@ const About = () => {
                 Prêt à passer au solaire ?
               </h2>
               <p className="text-emerald-100 text-lg mb-8">
-                Rejoignez les milliers de foyers marocains qui font confiance à Agalid pour leur indépendance énergétique.
+                Rejoignez les milliers de foyers algériens qui font confiance à Agalid pour leur indépendance énergétique.
               </p>
               <button className="bg-white text-emerald-600 px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:bg-emerald-50 hover:scale-105 transition-all duration-300 inline-flex items-center gap-2">
                 Commencer mon projet

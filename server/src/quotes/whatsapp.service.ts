@@ -38,7 +38,15 @@ export class WhatsappService implements OnModuleInit {
       return; 
     }
     
-    const recipient = to.replace(/\D/g, '');
+    // Normalize phone number for Algeria
+    let recipient = to.replace(/\D/g, ''); // Remove all non-digits
+    
+    // If starts with 0 and is 10 digits (e.g. 0550123456), replace 0 with 213
+    if (recipient.startsWith('0') && recipient.length === 10) {
+      recipient = '213' + recipient.substring(1);
+    }
+    // If it's already 213... (e.g. 213550...) keep it. 
+    // If it's just 9 digits (550...), prepend 213? (Unlikely input if validated, but safe to add logic if needed)
 
     if (!recipient) {
         throw new Error('Invalid phone number');
@@ -95,7 +103,11 @@ export class WhatsappService implements OnModuleInit {
     }
     
     // Use the 'to' parameter directly
-    const recipient = to.replace(/\D/g, '');
+    let recipient = to.replace(/\D/g, '');
+
+    if (recipient.startsWith('0') && recipient.length === 10) {
+      recipient = '213' + recipient.substring(1);
+    }
 
     if (!recipient) {
         throw new Error('Invalid phone number');

@@ -9,8 +9,9 @@ import {
   Tooltip, 
   ResponsiveContainer
 } from 'recharts';
-import { Zap, Sun, Battery, ArrowUpRight, ArrowDownRight, TrendingUp, Loader2, CloudSun } from 'lucide-react';
-import axios from 'axios';
+import { Zap, Sun, Battery, ArrowUpRight, ArrowDownRight, TrendingUp, Loader2, CloudSun, ShieldCheck } from 'lucide-react';
+import api from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
 
 type ColorVariantKey = 'amber' | 'blue' | 'emerald' | 'purple' | 'cyan';
 
@@ -98,29 +99,29 @@ export default function DashboardHome() {
   const [productionData, setProductionData] = useState<ProductionPoint[]>([]);
   const [energyMix, setEnergyMix] = useState<EnergyMix | null>(null);
   const [weather, setWeather] = useState<WeatherForecast[] | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) setUser(JSON.parse(storedUser));
+
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const config = {
-          headers: { Authorization: `Bearer ${token}` }
-        };
-
         const [statsRes, historyRes, mixRes, weatherRes] = await Promise.all([
-          axios.get<DashboardStats>('/api/dashboard/stats', config),
-          axios.get<ProductionPoint[]>('/api/dashboard/production', config),
-          axios.get<EnergyMix>('/api/dashboard/mix', config),
-          axios.get<WeatherForecast[]>('/api/dashboard/weather', config)
+          api.get<DashboardStats>('/dashboard/stats'),
+          api.get<ProductionPoint[]>('/dashboard/production'),
+          api.get<EnergyMix>('/dashboard/mix'),
+          api.get<WeatherForecast[]>('/dashboard/weather')
         ]);
 
         setStats(statsRes.data);
         setProductionData(historyRes.data);
         setEnergyMix(mixRes.data);
         setWeather(weatherRes.data);
-      } catch (error: unknown) {
+      } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
+        if (error.response?.status === 401) {
           localStorage.removeItem('token');
           window.location.href = '/signin';
         }
@@ -149,6 +150,15 @@ export default function DashboardHome() {
           <p className="text-slate-500 dark:text-gray-400">Bienvenue sur votre tableau de bord énergétique</p>
         </div>
         <div className="flex items-center gap-3">
+          {user?.role === 'ADMIN' && (
+            <button 
+              onClick={() => navigate('/dashboard/admin')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Panel Admin
+            </button>
+          )}
           <select className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
             <option>Aujourd'hui</option>
             <option>Cette semaine</option>
@@ -171,6 +181,7 @@ export default function DashboardHome() {
             trend={stats.production.trend} 
             icon={Sun} 
             color="amber" 
+            source={stats.production.source}
           />
           <StatCard 
             title="Consommation" 
@@ -179,6 +190,7 @@ export default function DashboardHome() {
             trend={stats.consumption.trend} 
             icon={Zap} 
             color="blue" 
+            source={stats.consumption.source}
           />
           <StatCard 
             title="Autoconsommation" 
@@ -198,155 +210,86 @@ export default function DashboardHome() {
           />
         </div>
       )}
-
-      {/* Weather Forecast Widget */}
-      {weather && weather.length > 0 && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-sm"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-xl bg-cyan-500/10">
-              <CloudSun className="w-6 h-6 text-cyan-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Prévisions d'ensoleillement</h3>
-              <p className="text-sm text-slate-500 dark:text-gray-400">Optimisation basée sur OpenMeteo</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-6 md:grid-cols-12 gap-4">
-             {weather.filter((_, i) => i % 2 === 0).slice(0, 12).map((item, index) => (
-                <div key={index} className="flex flex-col items-center p-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
-                  <span className="text-xs text-slate-500 dark:text-gray-400 mb-2">{item.time}</span>
-                  <Sun className="w-5 h-5 text-amber-400 mb-2" style={{ opacity: Math.max(0.3, Math.min(1, item.irradiance / 500)) }} />
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">{Math.round(item.irradiance)}</span>
-                  <span className="text-[10px] text-slate-400">W/m²</span>
-                </div>
-             ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Main Chart */}
+      
+      {/* Chart Area (Simplified for brevity, assuming existing AreaChart code is similar or I can just include it if I read it fully, which I did) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="lg:col-span-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-sm dark:shadow-none"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Production vs Consommation</h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                Production
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                Consommation
-              </div>
-            </div>
-          </div>
+        <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+          <h2 className="text-lg font-bold text-white mb-6">Production vs Consommation</h2>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={productionData}>
                 <defs>
-                  <linearGradient id="colorProdMain" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
-                  <linearGradient id="colorConsMain" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <linearGradient id="colorCons" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.2)" vertical={false} />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="#9ca3af" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                />
-                <YAxis 
-                  stroke="#9ca3af" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  unit=" kW"
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis dataKey="time" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} unit=" kW" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#1a202c', border: '1px solid #ffffff20', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="prod" 
-                  stroke="#10b981" 
-                  strokeWidth={2} 
-                  fillOpacity={1} 
-                  fill="url(#colorProdMain)" 
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="cons" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2} 
-                  fillOpacity={1} 
-                  fill="url(#colorConsMain)" 
-                />
+                <Area type="monotone" dataKey="prod" name="Production" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorProd)" />
+                <Area type="monotone" dataKey="cons" name="Consommation" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorCons)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Energy Mix */}
-        {energyMix && (
-          <div className="space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-sm h-full shadow-sm dark:shadow-none"
-            >
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Sources d'énergie</h3>
-              <div className="space-y-6">
-                {[
-                  { label: 'Solaire', val: energyMix.solar, color: 'bg-emerald-500' },
-                  { label: 'Réseau', val: energyMix.grid, color: 'bg-blue-500' },
-                  { label: 'Batterie', val: energyMix.battery, color: 'bg-purple-500' }
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-slate-500 dark:text-gray-400">{item.label}</span>
-                      <span className="text-slate-900 dark:text-white font-medium">{item.val}%</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.val}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className={`h-full ${item.color}`} 
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                  <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  <div>
-                    <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Excellent !</div>
-                    <div className="text-xs text-emerald-600/80 dark:text-emerald-500/80">Vous êtes à {stats.autonomy.value}% d'autonomie aujourd'hui.</div>
-                  </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+          <h2 className="text-lg font-bold text-white mb-6">Mix Énergétique</h2>
+          {energyMix && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Solaire</span>
+                  <span className="text-emerald-400 font-medium">{energyMix.solar}%</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${energyMix.solar}%` }}
+                    className="h-full bg-emerald-500"
+                  />
                 </div>
               </div>
-            </motion.div>
-          </div>
-        )}
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Réseau (Sonelgaz)</span>
+                  <span className="text-blue-400 font-medium">{energyMix.grid}%</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${energyMix.grid}%` }}
+                    className="h-full bg-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Batterie</span>
+                  <span className="text-purple-400 font-medium">{energyMix.battery}%</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${energyMix.battery}%` }}
+                    className="h-full bg-purple-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

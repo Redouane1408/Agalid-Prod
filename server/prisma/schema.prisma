@@ -41,7 +41,7 @@ model Quote {
   createdAt  DateTime  @default(now())
   requestId  Int
   request    ClientRequest @relation(fields: [requestId], references: [id])
-  totalMad   Int
+  totalDa    Int
   panelCount Int
   systemKw   Float
   status     String

@@ -9,15 +9,23 @@ import {
   LogOut, 
   Menu, 
   X, 
-  User, 
-  Bell
+  Home,
+  Shield
 } from 'lucide-react';
+import { Toaster } from 'sonner';
 
 export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  })();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -32,8 +40,14 @@ export default function DashboardLayout() {
     { name: 'Paramètres', icon: Settings, path: '/dashboard/settings' },
   ];
 
+  if (user?.role === 'ADMIN') {
+    navItems.splice(1, 0, { name: 'Administration', icon: Shield, path: '/dashboard/admin' });
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#050b09] text-slate-900 dark:text-white flex transition-colors duration-500">
+      <Toaster position="top-right" richColors />
+      
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -52,7 +66,7 @@ export default function DashboardLayout() {
               transition={{ type: "spring", bounce: 0, duration: 0.3 }}
               className="fixed top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-[#0A1210] border-r border-slate-200 dark:border-white/10 z-50 md:hidden flex flex-col"
             >
-              <div className="p-6 flex items-center justify-between">
+              <div className="p-6 flex items-center justify-between border-b border-slate-200 dark:border-white/10">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
                     <Sun className="w-5 h-5 text-white" />
@@ -91,6 +105,17 @@ export default function DashboardLayout() {
                     </Link>
                   );
                 })}
+
+                <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/10">
+                  <Link
+                    to="/"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+                  >
+                    <Home className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
+                    <span className="font-medium">Retour au site</span>
+                  </Link>
+                </div>
               </nav>
 
               <div className="p-4 border-t border-slate-200 dark:border-white/10">
@@ -185,6 +210,16 @@ export default function DashboardLayout() {
               </Link>
             );
           })}
+
+          <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/10">
+            <Link
+              to="/"
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 ${!isSidebarOpen && 'justify-center'}`}
+            >
+              <Home className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
+              {isSidebarOpen && <span className="font-medium">Retour au site</span>}
+            </Link>
+          </div>
         </nav>
 
         <div className="p-4 border-t border-slate-200 dark:border-white/10">
@@ -212,28 +247,19 @@ export default function DashboardLayout() {
             <span className="font-bold text-slate-900 dark:text-white">Agalid</span>
           </div>
 
-          <div className="flex items-center justify-end w-full gap-6">
-            <button className="relative p-2 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 border-2 border-white dark:border-[#0A1210]" />
-            </button>
-            
-            <div className="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-white/10">
-              <div className="text-right hidden sm:block">
-                <div className="text-sm font-medium text-slate-900 dark:text-white">John Doe</div>
-                <div className="text-xs text-slate-500 dark:text-gray-400">Premium Plan</div>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 p-[2px]">
-                <div className="w-full h-full rounded-full bg-white dark:bg-[#0A1210] flex items-center justify-center">
-                  <User className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
+          <div className="flex items-center gap-4 ml-auto">
+            <div className="text-right hidden sm:block">
+              <div className="text-sm font-medium text-slate-900 dark:text-white">{user?.name || 'Utilisateur'}</div>
+              <div className="text-xs text-slate-500 dark:text-gray-400">{user?.email}</div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-medium">
+              {(user?.name || 'U')[0].toUpperCase()}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <Outlet />
         </main>
       </div>

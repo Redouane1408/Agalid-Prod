@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -11,6 +11,12 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +37,8 @@ export default function SignIn() {
       if (from === 'integrations') {
         navigate('/?section=integrations');
       } else {
-        navigate('/dashboard');
+        // Redirect to home page for a smoother flow, user can access dashboard via header
+        navigate('/');
       }
     } catch (err: unknown) {
       console.error('Login error:', err);
