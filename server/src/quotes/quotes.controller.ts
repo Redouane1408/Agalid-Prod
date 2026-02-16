@@ -19,7 +19,10 @@ export class QuotesController {
 
   @Post(':id/send-whatsapp')
   async sendWhatsapp(@Param('id') id: string) {
-    await this.quotesService.sendWhatsApp(Number(id));
+    const result = await this.quotesService.sendWhatsApp(Number(id));
+    if (result && typeof result === 'object' && 'ok' in result && !result.ok) {
+      return { ok: false, error: (result as { error?: unknown }).error ?? null };
+    }
     return { ok: true };
   }
 }

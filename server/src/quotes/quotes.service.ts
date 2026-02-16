@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as nodemailer from 'nodemailer';
 import { WhatsappService } from './whatsapp.service';
@@ -300,14 +300,19 @@ export class QuotesService {
       where: { id: quoteId },
       include: { request: true },
     });
-    if (!quote) return;
+    if (!quote) {
+      return {
+        ok: false,
+        error: { message: 'Quote not found' },
+      };
+    }
 
     const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
     this.log('Sending WhatsApp logic triggered', { deliver, quoteId });
 
     if (!deliver) {
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
-      return;
+      return { ok: true };
     }
 
     const to = quote.request.phone;
@@ -333,9 +338,9 @@ export class QuotesService {
     try {
       this.log('Sending WhatsApp message via WhatsappService...');
       await this.whatsappService.sendTemplate(to, templateName, languageCode, parameters);
-      
       this.log('WhatsApp sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
+      return { ok: true };
     } catch (e: unknown) {
       let providerError: unknown = null;
       let message = 'Unknown error';
@@ -353,14 +358,14 @@ export class QuotesService {
 
       this.log('WhatsApp send failed', { message, meta: { templateName, languageCode }, providerError });
 
-      throw new HttpException(
-        {
-          message: 'WhatsApp send failed',
+      return {
+        ok: false,
+        error: {
+          message,
           meta: { templateName, languageCode },
           providerError,
         },
-        HttpStatus.BAD_GATEWAY,
-      );
+      };
     }
   }
 }

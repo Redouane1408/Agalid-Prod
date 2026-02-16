@@ -96,7 +96,12 @@ export default function Home() {
   const handleSendWhatsApp = async () => {
     if (!quoteId) return;
     try {
-      await api.post(`/quotes/${quoteId}/send-whatsapp`);
+      const res = await api.post(`/quotes/${quoteId}/send-whatsapp`);
+      if (!res.data?.ok) {
+        console.error('WhatsApp failed', res.data?.error);
+        toast.error("Échec de l'envoi WhatsApp. Vérifiez la configuration.");
+        return;
+      }
       toast.success('WhatsApp envoyé !');
     } catch (e) {
       console.error('WhatsApp failed', e);
