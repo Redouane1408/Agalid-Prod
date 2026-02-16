@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as nodemailer from 'nodemailer';
 import { WhatsappService } from './whatsapp.service';
@@ -339,13 +339,20 @@ export class QuotesService {
       this.log('WhatsApp sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        this.log('WhatsApp send failed', { message: e.message, meta: { templateName, languageCode } });
-      } else {
-        this.log('WhatsApp send failed', { error: e, meta: { templateName, languageCode } });
-      }
-      // Do NOT mark as SENT if it failed
-      throw e;
+      const anyErr = e as any;
+      const providerError = anyErr?.response?.data ?? null;
+      const message = anyErr?.message ?? 'Unknown error';
+
+      this.log('WhatsApp send failed', { message, meta: { templateName, languageCode }, providerError });
+
+      throw new HttpException(
+        {
+          message: 'WhatsApp send failed',
+          meta: { templateName, languageCode },
+          providerError,
+        },
+        HttpStatus.BAD_GATEWAY,
+      );
     }
   }
 }
