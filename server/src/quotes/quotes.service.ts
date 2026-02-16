@@ -324,12 +324,10 @@ export class QuotesService {
     const annualProd = Math.round(dailyProd * 365);
 
     const parameters = [
-      { type: 'text', text: quote.request.name },                    // {{1}} Name
-      { type: 'text', text: quote.request.location },                // {{2}} Location
-      { type: 'text', text: numFormatter.format(quote.systemKw) },   // {{3}} System Size (kW)
-      { type: 'text', text: quote.panelCount.toString() },           // {{4}} Panel Count
-      { type: 'text', text: numFormatter.format(annualProd) },       // {{5}} Annual Production (kWh)
-      { type: 'text', text: dzdFormatter.format(quote.totalDa) }     // {{6}} Total Price
+      { type: 'text', text: quote.request.name },
+      { type: 'text', text: numFormatter.format(quote.systemKw) },
+      { type: 'text', text: numFormatter.format(annualProd) },
+      { type: 'text', text: dzdFormatter.format(quote.totalDa) },
     ];
     
     try {
