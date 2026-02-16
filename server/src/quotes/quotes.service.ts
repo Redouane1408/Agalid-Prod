@@ -339,9 +339,19 @@ export class QuotesService {
       this.log('WhatsApp sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
     } catch (e: unknown) {
-      const anyErr = e as any;
-      const providerError = anyErr?.response?.data ?? null;
-      const message = anyErr?.message ?? 'Unknown error';
+      let providerError: unknown = null;
+      let message = 'Unknown error';
+
+      if (e instanceof Error) {
+        message = e.message;
+      }
+
+      if (typeof e === 'object' && e !== null && 'response' in e) {
+        const resp = (e as { response?: unknown }).response;
+        if (typeof resp === 'object' && resp !== null && 'data' in resp) {
+          providerError = (resp as { data?: unknown }).data ?? null;
+        }
+      }
 
       this.log('WhatsApp send failed', { message, meta: { templateName, languageCode }, providerError });
 
