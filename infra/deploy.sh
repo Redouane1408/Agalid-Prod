@@ -110,9 +110,21 @@ wait_for_api() {
 
     for i in {1..60}; do
         if groups $USER | grep &>/dev/null 'docker'; then
-            STATUS="$(docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' || true)"
+            RUNNING="$(docker inspect -f '{{.State.Running}}' "$SERVER_ID" 2>/dev/null || echo false)"
+            if [ "$RUNNING" != "true" ]; then
+                echo "API check $i/60 -> container not running yet"
+                sleep 5
+                continue
+            fi
+            STATUS="$(docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' 2>/dev/null || true)"
         else
-            STATUS="$(echo "$SSHPASS" | sudo -S docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' || true)"
+            RUNNING="$(echo "$SSHPASS" | sudo -S docker inspect -f '{{.State.Running}}' "$SERVER_ID" 2>/dev/null || echo false)"
+            if [ "$RUNNING" != "true" ]; then
+                echo "API check $i/60 -> container not running yet"
+                sleep 5
+                continue
+            fi
+            STATUS="$(echo "$SSHPASS" | sudo -S docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' 2>/dev/null || true)"
         fi
 
         echo "API check $i/60 -> $STATUS"
@@ -146,6 +158,31 @@ elif [ -f "infra/production.env" ]; then
 else
     echo "Warning: infra/production.env not found. Ensure .env exists or variables are set."
 fi
+
+fix_database_url_host() {
+    target_file="$1"
+    if [ ! -f "$target_file" ]; then
+        return 0
+    fi
+
+    if ! grep -qE '^[[:space:]]*DATABASE_URL=' "$target_file"; then
+        return 0
+    fi
+
+    if grep -qE '^[[:space:]]*DATABASE_URL=.*@(localhost|127\.0\.0\.1|0\.0\.0\.0):' "$target_file"; then
+        tmp_file="$(mktemp)"
+        sed -E 's#^([[:space:]]*DATABASE_URL=["'"'"']?postgresql://[^@]+@)(localhost|127\.0\.0\.1|0\.0\.0\.0):[0-9]+/#\1postgres:5432/#' "$target_file" > "$tmp_file"
+        mv "$tmp_file" "$target_file"
+        echo "Patched DATABASE_URL host in $target_file (localhost -> postgres)"
+    fi
+}
+
+echo "Verifying env keys presence..."
+if [ -f ".env" ]; then
+    grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env | cut -d= -f1 | head -n 80 || true
+fi
+fix_database_url_host ".env"
+fix_database_url_host "infra/production.env"
 
 # 3. Build and Start
 echo "Building and starting services..."
