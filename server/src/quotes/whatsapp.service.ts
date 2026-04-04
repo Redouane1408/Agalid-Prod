@@ -16,9 +16,22 @@ export class WhatsappService implements OnModuleInit {
     // Client will be initialized in onModuleInit
   }
 
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private getArray(value: unknown): unknown[] {
+    return Array.isArray(value) ? value : [];
+  }
+
   async onModuleInit() {
     this.accessToken = (process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || '').trim();
     this.phoneNumberId = (process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID || '').trim();
+    this.whatsappBusinessAccountId = (
+      process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID ||
+      process.env.WHATSAPP_BUSINESS_ACCOUNT_ID ||
+      ''
+    ).trim() || null;
     const isExplicitlyDisabled = (process.env.WHATSAPP_ENABLED || '').trim().toLowerCase() === 'false';
 
     if (isExplicitlyDisabled) {
@@ -37,17 +50,17 @@ export class WhatsappService implements OnModuleInit {
     try {
       const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}`;
       const response = await axios.get(url, {
-        params: { fields: 'id,display_phone_number,verified_name,whatsapp_business_account' },
+        params: { fields: 'id,display_phone_number,verified_name' },
         headers: { 'Authorization': `Bearer ${this.accessToken}` },
       });
       this.displayPhoneNumber = response.data?.display_phone_number ?? null;
       this.verifiedName = response.data?.verified_name ?? null;
-      this.whatsappBusinessAccountId = response.data?.whatsapp_business_account?.id ?? null;
       this.logger.log(
         `WhatsApp Sender Loaded: ${this.displayPhoneNumber || 'unknown'} (${this.verifiedName || 'unknown'})`
       );
+
       if (this.whatsappBusinessAccountId) {
-        this.logger.log(`WhatsApp WABA ID Loaded: ${this.whatsappBusinessAccountId}`);
+        this.logger.log(`WhatsApp WABA ID Configured: ${this.whatsappBusinessAccountId}`);
         try {
           const subscribeUrl = `https://graph.facebook.com/${this.apiVersion}/${this.whatsappBusinessAccountId}/subscribed_apps`;
           await axios.post(
@@ -66,8 +79,58 @@ export class WhatsappService implements OnModuleInit {
             this.logger.error('Failed to subscribe app to WABA webhooks', subscribeError as unknown);
           }
         }
+
+        const templateName = (process.env.WHATSAPP_TEMPLATE_NAME || 'quote_notification').trim();
+        if (templateName) {
+          try {
+            const templatesUrl = `https://graph.facebook.com/${this.apiVersion}/${this.whatsappBusinessAccountId}/message_templates`;
+            const templatesResp = await axios.get(templatesUrl, {
+              params: {
+                name: templateName,
+                fields: 'name,status,language,category,components',
+                limit: 10,
+              },
+              headers: { 'Authorization': `Bearer ${this.accessToken}` },
+            });
+            const data: unknown[] =
+              this.isRecord(templatesResp.data) && Array.isArray(templatesResp.data.data)
+                ? (templatesResp.data.data as unknown[])
+                : [];
+
+            const match: Record<string, unknown> | null =
+              (data.find((t) => this.isRecord(t) && t.name === templateName) as Record<string, unknown> | undefined) ||
+              (this.isRecord(data[0]) ? (data[0] as Record<string, unknown>) : null);
+
+            if (match) {
+              const components = this.getArray(match.components);
+              const bodyComponent =
+                (components.find(
+                  (c) => this.isRecord(c) && c.type === 'BODY'
+                ) as Record<string, unknown> | undefined) || null;
+              const bodyText = typeof bodyComponent?.text === 'string' ? bodyComponent.text : '';
+              const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+              const status = typeof match.status === 'string' ? match.status : 'unknown';
+              const language = typeof match.language === 'string' ? match.language : 'unknown';
+              const category = typeof match.category === 'string' ? match.category : 'unknown';
+              this.logger.log(
+                `WhatsApp Template Loaded: ${templateName} status=${status} language=${language} category=${category} bodyVars=${variableCount}`
+              );
+            } else {
+              this.logger.warn(`WhatsApp Template not found on WABA: ${templateName}`);
+            }
+          } catch (templateError) {
+            if (axios.isAxiosError(templateError)) {
+              this.logger.error(
+                `Failed to load WhatsApp template definition: ${templateError.message}`,
+                JSON.stringify(templateError.response?.data || {})
+              );
+            } else {
+              this.logger.error('Failed to load WhatsApp template definition', templateError as unknown);
+            }
+          }
+        }
       } else {
-        this.logger.warn('WhatsApp WABA ID not found from phone number lookup');
+        this.logger.warn('WhatsApp WABA ID is not configured (META_WHATSAPP_BUSINESS_ACCOUNT_ID)');
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
