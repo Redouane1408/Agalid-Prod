@@ -102,11 +102,20 @@ jobs:
           text = text.replace("\r\n", "\n").replace("\r", "\n")
 
           cleaned_lines = []
-          control_prefix = re.compile(r"^[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\uFEFF]+")
+          control_prefix = re.compile(r"^[\u0000-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u202A-\u202E\u2060\uFEFF]+")
           colon_assign = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*)$")
           eq_assign = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$")
+          any_assign = re.compile(r"^([^=]+)=(.*)$")
+
+          def sanitize_key(raw_key: str) -> str:
+            raw_key = raw_key.strip()
+            raw_key = re.sub(r"[\u0000-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u202A-\u202E\u2060\uFEFF]", "", raw_key)
+            raw_key = re.sub(r"[^A-Za-z0-9_]", "_", raw_key)
+            raw_key = re.sub(r"_+", "_", raw_key)
+            return raw_key
 
           for line in text.split("\n"):
+            line = line.lstrip()
             line = control_prefix.sub("", line)
             if line.startswith("export "):
               line = line[7:]
@@ -116,6 +125,12 @@ jobs:
             m2 = eq_assign.match(line)
             if m2:
               line = f"{m2.group(1)}={m2.group(2)}"
+            else:
+              m3 = any_assign.match(line)
+              if m3:
+                key = sanitize_key(m3.group(1))
+                if key:
+                  line = f"{key}={m3.group(2)}"
             cleaned_lines.append(line)
 
           p.write_text("\n".join(cleaned_lines).rstrip("\n") + "\n", encoding="utf-8")
@@ -130,6 +145,13 @@ jobs:
 
           if bad_lines:
             print(f"ERROR: Invalid production.env format on lines: {', '.join(map(str, bad_lines))}")
+            for idx in bad_lines:
+              raw = cleaned_lines[idx - 1]
+              candidate = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)", raw)
+              key = candidate.group(1) if candidate else "<none>"
+              has_equal = "=" in raw
+              has_colon = ":" in raw
+              print(f" - line {idx}: key={key} has_equal={has_equal} has_colon={has_colon}")
             raise SystemExit(1)
           print("OK: production.env format looks valid")
           PY
