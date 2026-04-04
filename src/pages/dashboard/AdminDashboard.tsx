@@ -235,8 +235,21 @@ export default function AdminDashboard() {
       await api.delete(`/products/${id}`);
       setProducts(products.filter(p => p.id !== id));
       toast.success('Produit supprimé');
+      fetchData();
     } catch {
-      toast.error('Erreur lors de la suppression');
+      toast.error('Erreur lors de la suppression du produit');
+    }
+  };
+
+  const handleClearCatalog = async () => {
+    if (!window.confirm('Cette action supprimera tous les produits du catalogue ainsi que les lignes de devis liées à ces produits. Voulez-vous continuer ?')) return;
+    try {
+      const response = await api.delete('/products/clear-all');
+      setProducts([]);
+      toast.success(`${response.data.deletedProducts || 0} produits supprimés du catalogue`);
+      fetchData();
+    } catch {
+      toast.error('Erreur lors de la réinitialisation du catalogue');
     }
   };
 
@@ -639,18 +652,27 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Catalogue Produits</h1>
           <p className="text-slate-500 dark:text-gray-400">Gérez les produits disponibles pour les devis</p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-        >
-          <Plus className="w-4 h-4" />
-          Nouveau Produit
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleClearCatalog}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20"
+          >
+            <Trash2 className="w-4 h-4" />
+            Vider le catalogue
+          </button>
+          <button
+            onClick={handleAdd}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+          >
+            <Plus className="w-4 h-4" />
+            Nouveau Produit
+          </button>
+        </div>
       </div>
 
       {loading ? (
