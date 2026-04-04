@@ -2,8 +2,14 @@ import { Controller, Post, UseInterceptors, UploadedFile, Get, Param, Res, BadRe
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
-import { Response } from 'express';
+import type { Response } from 'express';
 import * as fs from 'fs';
+
+interface UploadedImageFile {
+  filename: string;
+  mimetype: string;
+  originalname: string;
+}
 
 // Ensure uploads directory exists
 const uploadDir = join(process.cwd(), 'uploads');
@@ -32,7 +38,7 @@ export class UploadController {
       fileSize: 5 * 1024 * 1024, // 5MB
     }
   }))
-  uploadFile(@UploadedFile() file: any) {
+  uploadFile(@UploadedFile() file: UploadedImageFile | undefined) {
     if (!file) {
       throw new BadRequestException('File is required');
     }
