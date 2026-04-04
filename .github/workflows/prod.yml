@@ -106,6 +106,7 @@ jobs:
           colon_assign = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*)$")
           eq_assign = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$")
           any_assign = re.compile(r"^([^=]+)=(.*)$")
+          parsed = {}
 
           def sanitize_key(raw_key: str) -> str:
             raw_key = raw_key.strip()
@@ -136,6 +137,31 @@ jobs:
               cleaned_lines.append(f"# {stripped}")
             else:
               cleaned_lines.append(line)
+
+            m_final = eq_assign.match(line.strip())
+            if m_final:
+              parsed[m_final.group(1)] = m_final.group(2)
+
+          db_url = parsed.get("DATABASE_URL", "")
+          if ("@localhost:" in db_url) or ("@127.0.0.1:" in db_url):
+            user = parsed.get("POSTGRES_USER", "")
+            pwd = parsed.get("POSTGRES_PASSWORD", "")
+            db = parsed.get("POSTGRES_DB", "")
+            if user and pwd and db:
+              suffix = ""
+              if "?" in db_url:
+                suffix = "?" + db_url.split("?", 1)[1]
+              else:
+                suffix = "?schema=public"
+              parsed["DATABASE_URL"] = f"postgresql://{user}:{pwd}@postgres:5432/{db}{suffix}"
+              cleaned_lines = [
+                (f"DATABASE_URL={parsed['DATABASE_URL']}" if ln.strip().startswith("DATABASE_URL=") else ln)
+                for ln in cleaned_lines
+              ]
+              print("OK: rewrote DATABASE_URL host to postgres (was localhost)")
+            else:
+              print("ERROR: DATABASE_URL points to localhost but POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB are not all set")
+              raise SystemExit(1)
 
           p.write_text("\n".join(cleaned_lines).rstrip("\n") + "\n", encoding="utf-8")
 
