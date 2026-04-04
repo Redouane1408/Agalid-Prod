@@ -767,13 +767,19 @@ export class QuotesService {
     try {
       this.log('Sending WhatsApp message via WhatsappService...');
       const resp = await this.whatsappService.sendTemplate(to, templateName, languageCode, parameters);
+      if (resp && typeof resp === 'object') {
+        const recipient = 'recipient' in resp ? (resp as { recipient?: unknown }).recipient : null;
+        const messageId = 'messageId' in resp ? (resp as { messageId?: unknown }).messageId : null;
+        this.log('WhatsApp accepted by Meta', { recipient, messageId });
+      }
       this.log('WhatsApp sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
-      const messageId =
-        typeof resp === 'object' && resp !== null && 'messages' in resp && Array.isArray((resp as { messages?: unknown }).messages)
-          ? ((resp as { messages: Array<{ id?: string }> }).messages[0]?.id ?? null)
-          : null;
-      return { ok: true, messageId };
+      return {
+        ok: true,
+        recipient: typeof resp === 'object' && resp !== null && 'recipient' in resp ? (resp as { recipient?: unknown }).recipient : null,
+        messageId: typeof resp === 'object' && resp !== null && 'messageId' in resp ? (resp as { messageId?: unknown }).messageId : null,
+        meta: { templateName, languageCode },
+      };
     } catch (e: unknown) {
       let providerError: unknown = null;
       let message = 'Unknown error';

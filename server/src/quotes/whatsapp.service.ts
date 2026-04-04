@@ -91,8 +91,9 @@ export class WhatsappService implements OnModuleInit {
         }
       });
 
-      this.logger.log(`Template Message sent successfully. ID: ${response.data.messages?.[0]?.id}`);
-      return response.data;
+      const messageId = response.data?.messages?.[0]?.id ?? null;
+      this.logger.log(`Template Message accepted by Meta. ID: ${messageId}`);
+      return { recipient, messageId, raw: response.data };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         this.logger.error(
@@ -138,8 +139,9 @@ export class WhatsappService implements OnModuleInit {
         }
       });
 
-      this.logger.log(`Message sent successfully. ID: ${response.data.messages?.[0]?.id}`);
-      return response.data;
+      const messageId = response.data?.messages?.[0]?.id ?? null;
+      this.logger.log(`Message accepted by Meta. ID: ${messageId}`);
+      return { recipient, messageId, raw: response.data };
     } catch (error) {
       // Log detailed Axios error
       if (axios.isAxiosError(error)) {
