@@ -42,11 +42,11 @@ interface EnergyMix {
 }
 
 const colorVariants: Record<ColorVariantKey, { bg: string; text: string; icon: string }> = {
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', icon: 'text-amber-400' },
-  blue: { bg: 'bg-blue-500/10', text: 'text-blue-400', icon: 'text-blue-400' },
-  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', icon: 'text-emerald-400' },
-  purple: { bg: 'bg-purple-500/10', text: 'text-purple-400', icon: 'text-purple-400' },
-  cyan: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', icon: 'text-cyan-400' },
+  amber: { bg: 'bg-amber-500/10 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', icon: 'text-amber-500 dark:text-amber-400' },
+  blue: { bg: 'bg-blue-500/10 dark:bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', icon: 'text-blue-500 dark:text-blue-400' },
+  emerald: { bg: 'bg-emerald-500/10 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', icon: 'text-emerald-500 dark:text-emerald-400' },
+  purple: { bg: 'bg-purple-500/10 dark:bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', icon: 'text-purple-500 dark:text-purple-400' },
+  cyan: { bg: 'bg-cyan-500/10 dark:bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', icon: 'text-cyan-500 dark:text-cyan-400' },
 };
 
 interface StatCardProps {
@@ -63,14 +63,14 @@ const StatCard = ({ title, value, unit, trend, icon: Icon, color, source }: Stat
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm"
+    className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
   >
     <div className="flex items-center justify-between mb-4">
       <div className={`p-3 rounded-xl ${colorVariants[color].bg}`}>
         <Icon className={`w-6 h-6 ${colorVariants[color].icon}`} />
       </div>
       {trend && (
-        <div className={`flex items-center gap-1 text-sm font-medium ${trend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+        <div className={`flex items-center gap-1 text-sm font-medium ${trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
           {trend > 0 ? '+' : ''}{trend}%
           {trend > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
         </div>
@@ -78,11 +78,11 @@ const StatCard = ({ title, value, unit, trend, icon: Icon, color, source }: Stat
     </div>
     <div className="space-y-1">
       <div className="flex justify-between items-center">
-        <div className="text-gray-400 text-sm">{title}</div>
-        {source && <div className="text-xs px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-400">{source}</div>}
+        <div className="text-slate-500 dark:text-gray-400 text-sm">{title}</div>
+        {source && <div className="text-xs px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 dark:bg-white/5 dark:border-white/10 dark:text-gray-400">{source}</div>}
       </div>
-      <div className="text-2xl font-bold text-white">
-        {value} <span className="text-sm font-normal text-gray-500">{unit}</span>
+      <div className="text-2xl font-bold text-slate-900 dark:text-white">
+        {value} <span className="text-sm font-normal text-slate-500 dark:text-gray-500">{unit}</span>
       </div>
     </div>
   </motion.div>
@@ -94,18 +94,22 @@ export default function DashboardHome() {
   const [productionData, setProductionData] = useState<ProductionPoint[]>([]);
   const [energyMix, setEnergyMix] = useState<EnergyMix | null>(null);
   const [user, setUser] = useState<{ role?: string } | null>(null);
+  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
   const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
 
+  useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [statsRes, historyRes, mixRes] = await Promise.all([
-          api.get<DashboardStats>('/dashboard/stats'),
-          api.get<ProductionPoint[]>('/dashboard/production'),
-          api.get<EnergyMix>('/dashboard/mix')
+          api.get<DashboardStats>(`/dashboard/stats?period=${period}`),
+          api.get<ProductionPoint[]>(`/dashboard/production?period=${period}`),
+          api.get<EnergyMix>(`/dashboard/mix?period=${period}`)
         ]);
 
         setStats(statsRes.data);
@@ -123,7 +127,7 @@ export default function DashboardHome() {
     };
 
     fetchData();
-  }, []);
+  }, [period]);
 
   if (loading) {
     return (
@@ -151,10 +155,14 @@ export default function DashboardHome() {
               Panel Admin
             </button>
           )}
-          <select className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
-            <option>Aujourd'hui</option>
-            <option>Cette semaine</option>
-            <option>Ce mois</option>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as 'day' | 'week' | 'month')}
+            className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          >
+            <option value="day">Aujourd'hui</option>
+            <option value="week">Cette semaine</option>
+            <option value="month">Ce mois</option>
           </select>
           <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20">
             <TrendingUp className="w-4 h-4" />
@@ -205,8 +213,8 @@ export default function DashboardHome() {
       
       {/* Chart Area (Simplified for brevity, assuming existing AreaChart code is similar or I can just include it if I read it fully, which I did) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-          <h2 className="text-lg font-bold text-white mb-6">Production vs Consommation</h2>
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Production vs Consommation</h2>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={productionData}>
@@ -220,12 +228,13 @@ export default function DashboardHome() {
                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                <XAxis dataKey="time" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} unit=" kW" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.6} vertical={false} />
+                <XAxis dataKey="time" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} unit=" kW" />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a202c', border: '1px solid #ffffff20', borderRadius: '8px' }}
-                  itemStyle={{ color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a' }}
+                  labelStyle={{ color: '#475569' }}
+                  itemStyle={{ color: '#0f172a' }}
                 />
                 <Area type="monotone" dataKey="prod" name="Production" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorProd)" />
                 <Area type="monotone" dataKey="cons" name="Consommation" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorCons)" />
@@ -234,16 +243,16 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-          <h2 className="text-lg font-bold text-white mb-6">Mix Énergétique</h2>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Mix Énergétique</h2>
           {energyMix && (
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Solaire</span>
-                  <span className="text-emerald-400 font-medium">{energyMix.solar}%</span>
+                  <span className="text-slate-500 dark:text-gray-400">Solaire</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">{energyMix.solar}%</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${energyMix.solar}%` }}
@@ -254,10 +263,10 @@ export default function DashboardHome() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Réseau (Sonelgaz)</span>
-                  <span className="text-blue-400 font-medium">{energyMix.grid}%</span>
+                  <span className="text-slate-500 dark:text-gray-400">Réseau (Sonelgaz)</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-medium">{energyMix.grid}%</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${energyMix.grid}%` }}
@@ -268,10 +277,10 @@ export default function DashboardHome() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Batterie</span>
-                  <span className="text-purple-400 font-medium">{energyMix.battery}%</span>
+                  <span className="text-slate-500 dark:text-gray-400">Batterie</span>
+                  <span className="text-purple-600 dark:text-purple-400 font-medium">{energyMix.battery}%</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${energyMix.battery}%` }}

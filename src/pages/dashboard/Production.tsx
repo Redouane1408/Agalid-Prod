@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -16,23 +16,21 @@ export default function Production() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('day'); // day, week, month
 
-  useEffect(() => {
-    fetchData();
-  }, [period]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // In a real scenario, you'd pass the period to the API
-      // const res = await api.get(`/dashboard/production?period=${period}`);
-      const res = await api.get('/dashboard/production'); 
+      const res = await api.get(`/dashboard/production?period=${period}`);
       setData(res.data.map((d: { time: string; prod: number }) => ({ time: d.time, value: d.prod })));
     } catch (error) {
       console.error('Failed to fetch production data', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div className="space-y-6">

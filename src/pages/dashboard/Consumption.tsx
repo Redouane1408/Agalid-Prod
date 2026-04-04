@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -14,23 +14,23 @@ interface ConsumptionData {
 export default function Consumption() {
   const [data, setData] = useState<ConsumptionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Reusing production endpoint but mapping consumption if available, otherwise simulating
-      const res = await api.get('/dashboard/production'); 
-      setData(res.data.map((d: { time: string; cons?: number }) => ({ time: d.time, value: d.cons ?? Math.random() * 2 })));
+      const res = await api.get(`/dashboard/production?period=${period}`);
+      setData(res.data.map((d: { time: string; cons: number }) => ({ time: d.time, value: d.cons })));
     } catch (error) {
       console.error('Failed to fetch consumption data', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div className="space-y-6">
@@ -39,12 +39,29 @@ export default function Consumption() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Consommation</h1>
           <p className="text-slate-500 dark:text-gray-400">Suivi de votre consommation électrique</p>
         </div>
-        <button 
-          onClick={fetchData}
-          className="p-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-        >
-          <RefreshCw className={`w-5 h-5 text-slate-500 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-white dark:bg-white/5 rounded-lg p-1 border border-slate-200 dark:border-white/10">
+            {['day', 'week', 'month'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p as 'day' | 'week' | 'month')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  period === p
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {p === 'day' ? 'Jour' : p === 'week' ? 'Semaine' : 'Mois'}
+              </button>
+            ))}
+          </div>
+          <button 
+            onClick={fetchData}
+            className="p-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+          >
+            <RefreshCw className={`w-5 h-5 text-slate-500 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       <motion.div 

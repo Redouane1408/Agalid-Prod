@@ -210,7 +210,7 @@ export class PDFService {
     return lines;
   }
 
-  async generateFromElement(elementId: string, filename: string): Promise<void> {
+  async generateBlobFromElement(elementId: string): Promise<Blob> {
     const element = document.getElementById(elementId);
     if (!element) {
       throw new Error(`Element with id ${elementId} not found`);
@@ -241,7 +241,19 @@ export class PDFService {
       heightLeft -= pageHeight;
     }
 
-    pdf.save(`${filename}.pdf`);
+    return pdf.output('blob');
+  }
+
+  async downloadFromElement(elementId: string, filename: string): Promise<void> {
+    const blob = await this.generateBlobFromElement(elementId);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 }
 

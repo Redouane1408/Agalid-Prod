@@ -9,8 +9,12 @@ export class ProductsService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   async onModuleInit() {
-    const count = await this.prisma.product.count();
-    if (count === 0) {
+    const [productCount, categoryCount] = await Promise.all([
+      this.prisma.product.count(),
+      this.prisma.category.count(),
+    ]);
+
+    if (productCount === 0 && categoryCount === 0) {
       this.logger.log('Seeding initial products...');
       await this.seedProducts();
     }
@@ -63,8 +67,27 @@ export class ProductsService implements OnModuleInit {
   }
 
   async remove(id: number) {
-    return this.prisma.product.delete({
-      where: { id },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.quoteItem.deleteMany({
+        where: { productId: id },
+      });
+
+      return tx.product.delete({
+        where: { id },
+      });
+    });
+  }
+
+  async clearCatalog() {
+    return this.prisma.$transaction(async (tx) => {
+      const deletedQuoteItems = await tx.quoteItem.deleteMany();
+
+      const deletedProducts = await tx.product.deleteMany();
+
+      return {
+        deletedProducts: deletedProducts.count,
+        deletedQuoteItems: deletedQuoteItems.count,
+      };
     });
   }
 

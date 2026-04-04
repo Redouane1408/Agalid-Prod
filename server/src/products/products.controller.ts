@@ -76,4 +76,18 @@ export class ProductsController {
   async remove(@Param('id') id: string) {
     return this.productsService.remove(+id);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Delete()
+  async clearCatalog() {
+    return this.productsService.clearCatalog();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Delete('clear-all')
+  async clearCatalogExplicit() {
+    return this.productsService.clearCatalog();
+  }
 }
