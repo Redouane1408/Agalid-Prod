@@ -85,6 +85,68 @@ free_ports() {
     fi
 }
 
+wait_for_api() {
+    echo "Waiting for API to become ready..."
+
+    if docker compose version &> /dev/null; then
+        DC="docker compose"
+    elif command -v docker-compose &> /dev/null; then
+        DC="docker-compose"
+    else
+        echo "Error: Docker Compose not found."
+        exit 1
+    fi
+
+    if groups $USER | grep &>/dev/null 'docker'; then
+        SERVER_ID=$($DC -f infra/docker-compose.prod.yml ps -q server || true)
+    else
+        SERVER_ID="$(echo "$SSHPASS" | sudo -S $DC -f infra/docker-compose.prod.yml ps -q server || true)"
+    fi
+
+    if [ -z "$SERVER_ID" ]; then
+        echo "Error: server container not found"
+        exit 1
+    fi
+
+    if groups $USER | grep &>/dev/null 'docker'; then
+        NETWORK_NAME="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$SERVER_ID" | head -n 1)"
+    else
+        NETWORK_NAME="$(echo "$SSHPASS" | sudo -S docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$SERVER_ID" | head -n 1)"
+    fi
+
+    if [ -z "$NETWORK_NAME" ]; then
+        echo "Error: could not detect docker network name"
+        exit 1
+    fi
+
+    for i in {1..60}; do
+        if groups $USER | grep &>/dev/null 'docker'; then
+            STATUS="$(docker run --rm --network "$NETWORK_NAME" curlimages/curl:8.7.1 -s -o /dev/null -w "%{http_code}" http://server:4000/api/health || true)"
+        else
+            STATUS="$(echo "$SSHPASS" | sudo -S docker run --rm --network "$NETWORK_NAME" curlimages/curl:8.7.1 -s -o /dev/null -w "%{http_code}" http://server:4000/api/health || true)"
+        fi
+
+        echo "API check $i/60 -> $STATUS"
+        if [ "$STATUS" = "200" ]; then
+            echo "API is ready"
+            return 0
+        fi
+        sleep 5
+    done
+
+    echo "API did not become ready. Printing logs..."
+    if groups $USER | grep &>/dev/null 'docker'; then
+        $DC -f infra/docker-compose.prod.yml ps || true
+        $DC -f infra/docker-compose.prod.yml logs --tail 200 server || true
+        $DC -f infra/docker-compose.prod.yml logs --tail 200 proxy || true
+    else
+        echo "$SSHPASS" | sudo -S $DC -f infra/docker-compose.prod.yml ps || true
+        echo "$SSHPASS" | sudo -S $DC -f infra/docker-compose.prod.yml logs --tail 200 server || true
+        echo "$SSHPASS" | sudo -S $DC -f infra/docker-compose.prod.yml logs --tail 200 proxy || true
+    fi
+    return 1
+}
+
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
     cp .env infra/production.env
@@ -122,12 +184,14 @@ if groups $USER | grep &>/dev/null 'docker'; then
     free_ports
     $DOWN_CMD --remove-orphans
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
+    wait_for_api
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
     free_ports
     echo "$SSHPASS" | sudo -S $DOWN_CMD --remove-orphans
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
+    wait_for_api
 fi
 
 echo "Deployed git commit: ${GIT_COMMIT_SHA:-unknown}"
