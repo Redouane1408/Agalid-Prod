@@ -666,11 +666,11 @@ export class QuotesService {
       this.log('Email sending disabled by owner settings', { quoteId });
       return;
     }
-    const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
+    const deliveryEnv = (process.env.SEND_DELIVERY ?? '').trim().toLowerCase();
+    const deliver = deliveryEnv ? deliveryEnv === 'true' : (process.env.NODE_ENV || '').toLowerCase() === 'production';
     this.log('Sending email logic triggered', { deliver, quoteId });
     if (!deliver) {
-      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
-      return;
+      return { ok: false, error: { message: 'Delivery disabled' } };
     }
 
     const host = process.env.SMTP_HOST || 'localhost';
@@ -726,7 +726,8 @@ export class QuotesService {
       };
     }
 
-    const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
+    const deliveryEnv = (process.env.SEND_DELIVERY ?? '').trim().toLowerCase();
+    const deliver = deliveryEnv ? deliveryEnv === 'true' : (process.env.NODE_ENV || '').toLowerCase() === 'production';
     this.log('Sending WhatsApp logic triggered', { deliver, quoteId });
 
     if (!settings.sendWhatsappQuote) {
@@ -737,8 +738,7 @@ export class QuotesService {
     }
 
     if (!deliver) {
-      await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
-      return { ok: true };
+      return { ok: false, error: { message: 'Delivery disabled' } };
     }
 
     const to = quote.request.phone;

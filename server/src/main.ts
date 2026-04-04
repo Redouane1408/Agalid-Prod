@@ -8,8 +8,9 @@ import { json, urlencoded } from 'express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(helmet());
-  app.use(json({ limit: '10mb' }));
-  app.use(urlencoded({ extended: true, limit: '10mb' }));
+  const bodyLimit = (process.env.BODY_LIMIT || process.env.MAX_BODY_SIZE || '50mb').toString();
+  app.use(json({ limit: bodyLimit }));
+  app.use(urlencoded({ extended: true, limit: bodyLimit }));
   const origins = (process.env.ALLOWED_ORIGIN || '')
     .split(',')
     .map(s => s.trim())
