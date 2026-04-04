@@ -92,8 +92,9 @@ export class WhatsappService implements OnModuleInit {
       });
 
       const messageId = response.data?.messages?.[0]?.id ?? null;
+      const waId = response.data?.contacts?.[0]?.wa_id ?? null;
       this.logger.log(`Template Message accepted by Meta. ID: ${messageId}`);
-      return { recipient, messageId, raw: response.data };
+      return { recipient, messageId, waId, raw: response.data };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         this.logger.error(

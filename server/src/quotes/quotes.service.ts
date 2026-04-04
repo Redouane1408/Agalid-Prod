@@ -778,6 +778,7 @@ export class QuotesService {
         ok: true,
         recipient: typeof resp === 'object' && resp !== null && 'recipient' in resp ? (resp as { recipient?: unknown }).recipient : null,
         messageId: typeof resp === 'object' && resp !== null && 'messageId' in resp ? (resp as { messageId?: unknown }).messageId : null,
+        waId: typeof resp === 'object' && resp !== null && 'waId' in resp ? (resp as { waId?: unknown }).waId : null,
         meta: { templateName, languageCode },
       };
     } catch (e: unknown) {
