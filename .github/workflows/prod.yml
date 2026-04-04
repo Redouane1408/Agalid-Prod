@@ -143,25 +143,46 @@ jobs:
               parsed[m_final.group(1)] = m_final.group(2)
 
           db_url = parsed.get("DATABASE_URL", "")
-          if ("@localhost:" in db_url) or ("@127.0.0.1:" in db_url):
-            user = parsed.get("POSTGRES_USER", "")
-            pwd = parsed.get("POSTGRES_PASSWORD", "")
-            db = parsed.get("POSTGRES_DB", "")
-            if user and pwd and db:
-              suffix = ""
-              if "?" in db_url:
-                suffix = "?" + db_url.split("?", 1)[1]
+          user = parsed.get("POSTGRES_USER") or ""
+          db = parsed.get("POSTGRES_DB") or ""
+          pwd = parsed.get("POSTGRES_PASSWORD") or ""
+
+          suffix = ""
+          if "?" in db_url:
+            suffix = "?" + db_url.split("?", 1)[1]
+          else:
+            suffix = "?schema=public"
+
+          if user and db:
+            parsed["DATABASE_URL"] = f"postgresql://{user}:{pwd}@postgres:5432/{db}{suffix}"
+            replaced = False
+            next_lines = []
+            for ln in cleaned_lines:
+              if ln.strip().startswith("DATABASE_URL="):
+                next_lines.append(f"DATABASE_URL={parsed['DATABASE_URL']}")
+                replaced = True
               else:
-                suffix = "?schema=public"
-              parsed["DATABASE_URL"] = f"postgresql://{user}:{pwd}@postgres:5432/{db}{suffix}"
-              cleaned_lines = [
-                (f"DATABASE_URL={parsed['DATABASE_URL']}" if ln.strip().startswith("DATABASE_URL=") else ln)
-                for ln in cleaned_lines
-              ]
-              print("OK: rewrote DATABASE_URL host to postgres (was localhost)")
-            else:
-              print("ERROR: DATABASE_URL points to localhost but POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB are not all set")
-              raise SystemExit(1)
+                next_lines.append(ln)
+            if not replaced:
+              next_lines.append(f"DATABASE_URL={parsed['DATABASE_URL']}")
+            cleaned_lines = next_lines
+            print("OK: set DATABASE_URL for docker network (postgres:5432)")
+          else:
+            if "localhost" in db_url or "127.0.0.1" in db_url or "0.0.0.0" in db_url:
+              patched = re.sub(r"@(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0):[0-9]+/", "@postgres:5432/", db_url)
+              if patched != db_url:
+                replaced = False
+                next_lines = []
+                for ln in cleaned_lines:
+                  if ln.strip().startswith("DATABASE_URL="):
+                    next_lines.append(f"DATABASE_URL={patched}")
+                    replaced = True
+                  else:
+                    next_lines.append(ln)
+                if not replaced:
+                  next_lines.append(f"DATABASE_URL={patched}")
+                cleaned_lines = next_lines
+                print("OK: patched DATABASE_URL host to postgres (kept credentials/db from secret)")
 
           p.write_text("\n".join(cleaned_lines).rstrip("\n") + "\n", encoding="utf-8")
 
