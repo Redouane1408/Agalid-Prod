@@ -127,6 +127,9 @@ wait_for_api() {
             STATUS="$(echo "$SSHPASS" | sudo -S docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' 2>/dev/null || true)"
         fi
 
+        if [[ ! "$STATUS" =~ ^[0-9]{3}$ ]]; then
+            STATUS=""
+        fi
         echo "API check $i/60 -> $STATUS"
         if [ "$STATUS" = "200" ]; then
             echo "API is ready"

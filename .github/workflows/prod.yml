@@ -283,6 +283,10 @@ jobs:
                 git reset --hard origin/main
               fi
 
+              echo "📌 Deploying commit $DEPLOY_SHA"
+              git reset --hard "$DEPLOY_SHA"
+              git rev-parse --short HEAD
+
               if [ -f /tmp/agalid_env_backup ]; then mv /tmp/agalid_env_backup .env; fi
               mkdir -p infra
               if [ -f /tmp/agalid_production_env_backup ]; then mv /tmp/agalid_production_env_backup infra/production.env; fi
@@ -332,10 +336,6 @@ jobs:
                 mv .env.merged .env
                 rm -f .env.ci
               fi
-
-              echo "📌 Deploying commit $DEPLOY_SHA"
-              git reset --hard "$DEPLOY_SHA"
-              git rev-parse --short HEAD
               
               echo "🏗️ Executing deploy.sh..."
               if [ -f "infra/deploy.sh" ]; then
