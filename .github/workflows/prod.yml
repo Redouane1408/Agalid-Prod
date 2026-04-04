@@ -91,7 +91,48 @@ jobs:
           sudo apt-get install -y sshpass
 
           # 1. Prepare Env File
-          echo "${{ secrets.PROD_ENV_FILE }}" > production.env
+          printf '%s' "${{ secrets.PROD_ENV_FILE }}" > production.env
+          python3 - << 'PY'
+          import re
+          from pathlib import Path
+
+          p = Path("production.env")
+          raw = p.read_bytes()
+          text = raw.decode("utf-8-sig", errors="replace")
+          text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+          cleaned_lines = []
+          control_prefix = re.compile(r"^[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\uFEFF]+")
+          colon_assign = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*)$")
+          eq_assign = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$")
+
+          for line in text.split("\n"):
+            line = control_prefix.sub("", line)
+            if line.startswith("export "):
+              line = line[7:]
+            m = colon_assign.match(line)
+            if m:
+              line = f"{m.group(1)}={m.group(2)}"
+            m2 = eq_assign.match(line)
+            if m2:
+              line = f"{m2.group(1)}={m2.group(2)}"
+            cleaned_lines.append(line)
+
+          p.write_text("\n".join(cleaned_lines).rstrip("\n") + "\n", encoding="utf-8")
+
+          bad_lines = []
+          for idx, line in enumerate(cleaned_lines, start=1):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+              continue
+            if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", stripped):
+              bad_lines.append(idx)
+
+          if bad_lines:
+            print(f"ERROR: Invalid production.env format on lines: {', '.join(map(str, bad_lines))}")
+            raise SystemExit(1)
+          print("OK: production.env format looks valid")
+          PY
           
           # 2. Define Variables
           MAX_RETRIES=10

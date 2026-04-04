@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # 1. Install Docker & Docker Compose (if missing)
 if ! command -v docker &> /dev/null; then
     echo "Installing Docker..."
