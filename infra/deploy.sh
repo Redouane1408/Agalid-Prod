@@ -48,6 +48,43 @@ if systemctl is-active --quiet caddy; then
     echo "$SSHPASS" | sudo -S systemctl disable caddy
 fi
 
+free_ports() {
+    echo "Checking port conflicts (80/443)..."
+    if command -v ss &> /dev/null; then
+        echo "$SSHPASS" | sudo -S ss -ltnp | grep -E ':(80|443)\s' || true
+    fi
+
+    for port in 80 443; do
+        if groups $USER | grep &>/dev/null 'docker'; then
+            IDS="$(docker ps -q --filter "publish=$port" | tr '\n' ' ')"
+            if [ -n "$IDS" ]; then
+                echo "Stopping containers publishing $port: $IDS"
+                docker stop $IDS || true
+                docker rm $IDS || true
+            fi
+        else
+            IDS="$(echo "$SSHPASS" | sudo -S docker ps -q --filter "publish=$port" | tr '\n' ' ')"
+            if [ -n "$IDS" ]; then
+                echo "Stopping containers publishing $port: $IDS"
+                echo "$SSHPASS" | sudo -S docker stop $IDS || true
+                echo "$SSHPASS" | sudo -S docker rm $IDS || true
+            fi
+        fi
+    done
+
+    if command -v ss &> /dev/null; then
+        STILL_LISTENING="$(echo "$SSHPASS" | sudo -S ss -ltnp | grep -E ':(80|443)\s' || true)"
+        if [ -n "$STILL_LISTENING" ]; then
+            echo "Ports still in use, attempting to kill listeners..."
+            if command -v fuser &> /dev/null; then
+                echo "$SSHPASS" | sudo -S fuser -k 80/tcp || true
+                echo "$SSHPASS" | sudo -S fuser -k 443/tcp || true
+            fi
+            echo "$SSHPASS" | sudo -S ss -ltnp | grep -E ':(80|443)\s' || true
+        fi
+    fi
+}
+
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
     cp .env infra/production.env
@@ -82,31 +119,13 @@ fi
 
 if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
-    echo "Checking port conflicts (80/443)..."
-    if command -v ss &> /dev/null; then
-        ss -ltnp | grep -E ':(80|443)\s' || true
-    fi
-    CONFLICT_IDS="$(docker ps --format '{{.ID}}\t{{.Ports}}' | awk '$2 ~ /0\\.0\\.0\\.0:80->|:::80->|0\\.0\\.0\\.0:443->|:::443->/ {print $1}' | tr '\n' ' ')"
-    if [ -n "$CONFLICT_IDS" ]; then
-        echo "Stopping containers using 80/443: $CONFLICT_IDS"
-        docker stop $CONFLICT_IDS || true
-        docker rm $CONFLICT_IDS || true
-    fi
+    free_ports
     $DOWN_CMD --remove-orphans
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
-    echo "Checking port conflicts (80/443)..."
-    if command -v ss &> /dev/null; then
-        ss -ltnp | grep -E ':(80|443)\s' || true
-    fi
-    CONFLICT_IDS="$(echo "$SSHPASS" | sudo -S docker ps --format '{{.ID}}\t{{.Ports}}' | awk '$2 ~ /0\\.0\\.0\\.0:80->|:::80->|0\\.0\\.0\\.0:443->|:::443->/ {print $1}' | tr '\n' ' ')"
-    if [ -n "$CONFLICT_IDS" ]; then
-        echo "Stopping containers using 80/443: $CONFLICT_IDS"
-        echo "$SSHPASS" | sudo -S docker stop $CONFLICT_IDS || true
-        echo "$SSHPASS" | sudo -S docker rm $CONFLICT_IDS || true
-    fi
+    free_ports
     echo "$SSHPASS" | sudo -S $DOWN_CMD --remove-orphans
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
 fi
