@@ -766,10 +766,14 @@ export class QuotesService {
     
     try {
       this.log('Sending WhatsApp message via WhatsappService...');
-      await this.whatsappService.sendTemplate(to, templateName, languageCode, parameters);
+      const resp = await this.whatsappService.sendTemplate(to, templateName, languageCode, parameters);
       this.log('WhatsApp sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
-      return { ok: true };
+      const messageId =
+        typeof resp === 'object' && resp !== null && 'messages' in resp && Array.isArray((resp as { messages?: unknown }).messages)
+          ? ((resp as { messages: Array<{ id?: string }> }).messages[0]?.id ?? null)
+          : null;
+      return { ok: true, messageId };
     } catch (e: unknown) {
       let providerError: unknown = null;
       let message = 'Unknown error';

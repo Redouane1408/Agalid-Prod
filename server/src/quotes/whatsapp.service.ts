@@ -32,25 +32,36 @@ export class WhatsappService implements OnModuleInit {
     this.logger.log('WhatsApp (Meta) Client Initialized');
   }
 
+  private normalizeRecipient(to: string): string {
+    let recipient = (to || '').replace(/\D/g, '');
+    if (!recipient) {
+      throw new Error('Invalid phone number');
+    }
+
+    if (recipient.startsWith('00')) {
+      recipient = recipient.substring(2);
+    }
+
+    if (recipient.startsWith('0') && recipient.length === 10) {
+      recipient = '213' + recipient.substring(1);
+    } else if (recipient.length === 9) {
+      recipient = '213' + recipient;
+    }
+
+    if (recipient.length < 10 || recipient.length > 15) {
+      throw new Error('Invalid phone number');
+    }
+
+    return recipient;
+  }
+
   async sendTemplate(to: string, templateName: string, languageCode: string, parameters: Array<Record<string, unknown>>) {
     if (!this.isEnabled) {
       this.logger.warn('WhatsApp service is disabled or not initialized.');
       throw new Error('WhatsApp service is disabled or not configured');
     }
     
-    // Normalize phone number for Algeria
-    let recipient = to.replace(/\D/g, ''); // Remove all non-digits
-    
-    // If starts with 0 and is 10 digits (e.g. 0550123456), replace 0 with 213
-    if (recipient.startsWith('0') && recipient.length === 10) {
-      recipient = '213' + recipient.substring(1);
-    }
-    // If it's already 213... (e.g. 213550...) keep it. 
-    // If it's just 9 digits (550...), prepend 213? (Unlikely input if validated, but safe to add logic if needed)
-
-    if (!recipient) {
-        throw new Error('Invalid phone number');
-    }
+    const recipient = this.normalizeRecipient(to);
 
     const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
     
@@ -102,16 +113,7 @@ export class WhatsappService implements OnModuleInit {
       return; 
     }
     
-    // Use the 'to' parameter directly
-    let recipient = to.replace(/\D/g, '');
-
-    if (recipient.startsWith('0') && recipient.length === 10) {
-      recipient = '213' + recipient.substring(1);
-    }
-
-    if (!recipient) {
-        throw new Error('Invalid phone number');
-    }
+    const recipient = this.normalizeRecipient(to);
 
     const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
     
