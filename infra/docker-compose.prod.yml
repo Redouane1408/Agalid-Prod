@@ -55,9 +55,6 @@ services:
     restart: unless-stopped
     env_file:
       - production.env
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@agalid.com
-      PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5050:80"
     depends_on:

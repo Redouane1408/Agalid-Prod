@@ -184,6 +184,29 @@ jobs:
                 cleaned_lines = next_lines
                 print("OK: patched DATABASE_URL host to postgres (kept credentials/db from secret)")
 
+          pg_email = parsed.get("PGADMIN_DEFAULT_EMAIL") or "admin@agalid.com"
+          pg_pwd = parsed.get("PGADMIN_DEFAULT_PASSWORD")
+          if pg_pwd is None:
+            pg_pwd = pwd
+          if pg_pwd is None:
+            pg_pwd = ""
+
+          def upsert_kv(lines, key, value):
+            replaced = False
+            out = []
+            for ln in lines:
+              if ln.strip().startswith(f"{key}="):
+                out.append(f"{key}={value}")
+                replaced = True
+              else:
+                out.append(ln)
+            if not replaced:
+              out.append(f"{key}={value}")
+            return out
+
+          cleaned_lines = upsert_kv(cleaned_lines, "PGADMIN_DEFAULT_EMAIL", pg_email)
+          cleaned_lines = upsert_kv(cleaned_lines, "PGADMIN_DEFAULT_PASSWORD", pg_pwd)
+
           p.write_text("\n".join(cleaned_lines).rstrip("\n") + "\n", encoding="utf-8")
 
           bad_lines = []

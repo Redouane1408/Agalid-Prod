@@ -19,5 +19,5 @@ RUN npm run build
 
 EXPOSE 4000
 # Run migrations before starting
-CMD ["sh", "-c", "set -e; set +e; npx prisma migrate deploy; rc=$?; set -e; if [ $rc -ne 0 ]; then npx prisma migrate resolve --rolled-back 20260212225842_fix_quote_schema || true; npx prisma migrate deploy; fi; npm run start"]
+CMD ["sh", "-c", "set -e; set +e; npx prisma migrate deploy; rc=$?; set -e; if [ $rc -ne 0 ]; then npx prisma migrate resolve --applied 20260212225842_fix_quote_schema || true; npx prisma migrate deploy; fi; npm run start"]
 
