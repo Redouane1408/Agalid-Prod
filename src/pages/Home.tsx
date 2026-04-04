@@ -44,7 +44,6 @@ const blobToBase64 = async (blob: Blob) => {
 
 export default function Home() {
   const [formOpen, setFormOpen] = useState(false);
-  const [formData, setFormData] = useState<ClientData | null>(null);
   const [recommendation, setRecommendation] = useState<AIRecommendation | null>(null);
   const [quoteId, setQuoteId] = useState<number | null>(null);
   const [quote, setQuote] = useState<QuoteData | null>(null);
@@ -68,7 +67,6 @@ export default function Home() {
   };
 
   const handleComplete = async (data: ClientData) => {
-    setFormData(data);
     try {
       const res = await api.post('/requests', data);
       const created = res.data;
