@@ -97,18 +97,19 @@ wait_for_api() {
         exit 1
     fi
 
-    if groups $USER | grep &>/dev/null 'docker'; then
-        SERVER_ID=$($DC -f infra/docker-compose.prod.yml ps -q server || true)
-    else
-        SERVER_ID="$(echo "$SSHPASS" | sudo -S $DC -f infra/docker-compose.prod.yml ps -q server || true)"
-    fi
-
-    if [ -z "$SERVER_ID" ]; then
-        echo "Error: server container not found"
-        exit 1
-    fi
-
     for i in {1..60}; do
+        if groups $USER | grep &>/dev/null 'docker'; then
+            SERVER_ID=$($DC -f infra/docker-compose.prod.yml ps -q server || true)
+        else
+            SERVER_ID="$(echo "$SSHPASS" | sudo -S $DC -f infra/docker-compose.prod.yml ps -q server || true)"
+        fi
+
+        if [ -z "$SERVER_ID" ]; then
+            echo "API check $i/60 -> server container not found yet"
+            sleep 5
+            continue
+        fi
+
         if groups $USER | grep &>/dev/null 'docker'; then
             RUNNING="$(docker inspect -f '{{.State.Running}}' "$SERVER_ID" 2>/dev/null || echo false)"
             if [ "$RUNNING" != "true" ]; then
