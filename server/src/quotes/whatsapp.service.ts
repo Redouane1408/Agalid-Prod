@@ -10,6 +10,7 @@ export class WhatsappService implements OnModuleInit {
   private apiVersion = 'v17.0'; // Or latest stable version
   private displayPhoneNumber: string | null = null;
   private verifiedName: string | null = null;
+  private whatsappBusinessAccountId: string | null = null;
 
   constructor() {
     // Client will be initialized in onModuleInit
@@ -36,14 +37,38 @@ export class WhatsappService implements OnModuleInit {
     try {
       const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}`;
       const response = await axios.get(url, {
-        params: { fields: 'id,display_phone_number,verified_name' },
+        params: { fields: 'id,display_phone_number,verified_name,whatsapp_business_account' },
         headers: { 'Authorization': `Bearer ${this.accessToken}` },
       });
       this.displayPhoneNumber = response.data?.display_phone_number ?? null;
       this.verifiedName = response.data?.verified_name ?? null;
+      this.whatsappBusinessAccountId = response.data?.whatsapp_business_account?.id ?? null;
       this.logger.log(
         `WhatsApp Sender Loaded: ${this.displayPhoneNumber || 'unknown'} (${this.verifiedName || 'unknown'})`
       );
+      if (this.whatsappBusinessAccountId) {
+        this.logger.log(`WhatsApp WABA ID Loaded: ${this.whatsappBusinessAccountId}`);
+        try {
+          const subscribeUrl = `https://graph.facebook.com/${this.apiVersion}/${this.whatsappBusinessAccountId}/subscribed_apps`;
+          await axios.post(
+            subscribeUrl,
+            {},
+            { headers: { 'Authorization': `Bearer ${this.accessToken}` } }
+          );
+          this.logger.log(`WhatsApp App subscribed to WABA webhooks: ${this.whatsappBusinessAccountId}`);
+        } catch (subscribeError) {
+          if (axios.isAxiosError(subscribeError)) {
+            this.logger.error(
+              `Failed to subscribe app to WABA webhooks: ${subscribeError.message}`,
+              JSON.stringify(subscribeError.response?.data || {})
+            );
+          } else {
+            this.logger.error('Failed to subscribe app to WABA webhooks', subscribeError as unknown);
+          }
+        }
+      } else {
+        this.logger.warn('WhatsApp WABA ID not found from phone number lookup');
+      }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         this.logger.error(
