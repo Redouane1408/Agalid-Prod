@@ -148,13 +148,13 @@ wait_for_api() {
     return 1
 }
 
-if [ -f ".env" ]; then
+if [ -f "infra/production.env" ]; then
+    cp infra/production.env .env
+    echo "Loaded configuration from infra/production.env"
+elif [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
     cp .env infra/production.env
     echo "Synced .env to infra/production.env"
-elif [ -f "infra/production.env" ]; then
-    cp infra/production.env .env
-    echo "Loaded configuration from infra/production.env"
 else
     echo "Warning: infra/production.env not found. Ensure .env exists or variables are set."
 fi

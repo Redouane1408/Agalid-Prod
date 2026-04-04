@@ -230,25 +230,23 @@ jobs:
                 continue
             fi
 
-            # Step A: Copy .env file
-            echo "📤 Uploading .env file..."
-            # sshpass -e uses the SSHPASS environment variable
-            if sshpass -e scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/.env; then
-                echo "✅ .env file uploaded successfully."
+            # Step A: Upload env files to temporary paths (we will merge on the server)
+            echo "📤 Uploading env files..."
+            if sshpass -e ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/agalid/infra"; then
+              echo "✅ Remote infra dir ready."
             else
-                echo "⚠️ SCP upload failed. Waiting 15s..."
-                sleep 15
-                continue
+              echo "⚠️ Failed to ensure remote infra dir. Waiting 15s..."
+              sleep 15
+              continue
             fi
 
-            echo "📤 Uploading production env file for Docker Compose..."
-            if sshpass -e ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/agalid/infra" &&
-               sshpass -e scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/infra/production.env; then
-                echo "✅ infra/production.env uploaded successfully."
+            if sshpass -e scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/infra/production.env.ci &&
+               sshpass -e scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/.env.ci; then
+              echo "✅ Env uploaded to temporary files."
             else
-                echo "⚠️ production env upload failed. Waiting 15s..."
-                sleep 15
-                continue
+              echo "⚠️ Env upload failed. Waiting 15s..."
+              sleep 15
+              continue
             fi
 
             # Step B: Run Remote Script
@@ -288,6 +286,52 @@ jobs:
               if [ -f /tmp/agalid_env_backup ]; then mv /tmp/agalid_env_backup .env; fi
               mkdir -p infra
               if [ -f /tmp/agalid_production_env_backup ]; then mv /tmp/agalid_production_env_backup infra/production.env; fi
+
+              merge_env() {
+                base_file="$1"
+                ci_file="$2"
+                out_file="$3"
+
+                cp "$ci_file" "$out_file"
+
+                if [ -f "$base_file" ]; then
+                  for key in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL; do
+                    if ! grep -q "^${key}=" "$out_file"; then
+                      val="$(grep "^${key}=" "$base_file" | head -n 1 || true)"
+                      if [ -n "$val" ]; then
+                        echo "$val" >> "$out_file"
+                      fi
+                    fi
+                  done
+                fi
+
+                if ! grep -q '^POSTGRES_PASSWORD=' "$out_file"; then
+                  echo "ERROR: POSTGRES_PASSWORD is missing in env and no previous value exists on server"
+                  exit 1
+                fi
+                if ! grep -q '^POSTGRES_USER=' "$out_file"; then
+                  echo "ERROR: POSTGRES_USER is missing in env and no previous value exists on server"
+                  exit 1
+                fi
+                if ! grep -q '^POSTGRES_DB=' "$out_file"; then
+                  echo "ERROR: POSTGRES_DB is missing in env and no previous value exists on server"
+                  exit 1
+                fi
+              }
+
+              if [ -f infra/production.env.ci ]; then
+                echo "Merging production env..."
+                merge_env "infra/production.env" "infra/production.env.ci" "infra/production.env.merged"
+                mv infra/production.env.merged infra/production.env
+                rm -f infra/production.env.ci
+              fi
+
+              if [ -f .env.ci ]; then
+                echo "Merging app env..."
+                merge_env ".env" ".env.ci" ".env.merged"
+                mv .env.merged .env
+                rm -f .env.ci
+              fi
 
               echo "📌 Deploying commit $DEPLOY_SHA"
               git reset --hard "$DEPLOY_SHA"
