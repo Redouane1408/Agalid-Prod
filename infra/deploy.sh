@@ -42,6 +42,12 @@ echo "Firewall status:"
 echo "$SSHPASS" | sudo -S ufw status
 # echo "$SSHPASS" | sudo -S ufw disable # Uncomment if firewall issues persist
 
+if systemctl is-active --quiet caddy; then
+    echo "Stopping Caddy..."
+    echo "$SSHPASS" | sudo -S systemctl stop caddy
+    echo "$SSHPASS" | sudo -S systemctl disable caddy
+fi
+
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
     cp .env infra/production.env
@@ -76,11 +82,31 @@ fi
 
 if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
+    echo "Checking port conflicts (80/443)..."
+    if command -v ss &> /dev/null; then
+        ss -ltnp | grep -E ':(80|443)\s' || true
+    fi
+    CONFLICT_IDS="$(docker ps --format '{{.ID}}\t{{.Ports}}' | awk '$2 ~ /0\\.0\\.0\\.0:80->|:::80->|0\\.0\\.0\\.0:443->|:::443->/ {print $1}' | tr '\n' ' ')"
+    if [ -n "$CONFLICT_IDS" ]; then
+        echo "Stopping containers using 80/443: $CONFLICT_IDS"
+        docker stop $CONFLICT_IDS || true
+        docker rm $CONFLICT_IDS || true
+    fi
     $DOWN_CMD --remove-orphans
     $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
+    echo "Checking port conflicts (80/443)..."
+    if command -v ss &> /dev/null; then
+        ss -ltnp | grep -E ':(80|443)\s' || true
+    fi
+    CONFLICT_IDS="$(echo "$SSHPASS" | sudo -S docker ps --format '{{.ID}}\t{{.Ports}}' | awk '$2 ~ /0\\.0\\.0\\.0:80->|:::80->|0\\.0\\.0\\.0:443->|:::443->/ {print $1}' | tr '\n' ' ')"
+    if [ -n "$CONFLICT_IDS" ]; then
+        echo "Stopping containers using 80/443: $CONFLICT_IDS"
+        echo "$SSHPASS" | sudo -S docker stop $CONFLICT_IDS || true
+        echo "$SSHPASS" | sudo -S docker rm $CONFLICT_IDS || true
+    fi
     echo "$SSHPASS" | sudo -S $DOWN_CMD --remove-orphans
     echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
 fi
