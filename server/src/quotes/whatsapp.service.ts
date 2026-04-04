@@ -14,17 +14,17 @@ export class WhatsappService implements OnModuleInit {
   }
 
   onModuleInit() {
-    if (process.env.WHATSAPP_ENABLED !== 'true') {
-        this.logger.log('WhatsApp Client disabled (WHATSAPP_ENABLED != true)');
-        return;
-    }
+    this.accessToken = (process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || '').trim();
+    this.phoneNumberId = (process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID || '').trim();
+    const isExplicitlyDisabled = (process.env.WHATSAPP_ENABLED || '').trim().toLowerCase() === 'false';
 
-    this.accessToken = (process.env.META_ACCESS_TOKEN || '').trim();
-    this.phoneNumberId = (process.env.META_PHONE_NUMBER_ID || '').trim();
+    if (isExplicitlyDisabled) {
+      this.logger.log('WhatsApp Client disabled by configuration');
+      return;
+    }
 
     if (!this.accessToken || !this.phoneNumberId) {
         this.logger.error('WhatsApp Meta credentials (ACCESS_TOKEN/PHONE_NUMBER_ID) missing');
-        // Do not enable if credentials are missing
         return;
     }
 
@@ -35,7 +35,7 @@ export class WhatsappService implements OnModuleInit {
   async sendTemplate(to: string, templateName: string, languageCode: string, parameters: Array<Record<string, unknown>>) {
     if (!this.isEnabled) {
       this.logger.warn('WhatsApp service is disabled or not initialized.');
-      return; 
+      throw new Error('WhatsApp service is disabled or not configured');
     }
     
     // Normalize phone number for Algeria

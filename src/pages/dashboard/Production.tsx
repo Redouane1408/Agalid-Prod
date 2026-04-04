@@ -23,9 +23,7 @@ export default function Production() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // In a real scenario, you'd pass the period to the API
-      // const res = await api.get(`/dashboard/production?period=${period}`);
-      const res = await api.get('/dashboard/production'); 
+      const res = await api.get(`/dashboard/production?period=${period}`);
       setData(res.data.map((d: { time: string; prod: number }) => ({ time: d.time, value: d.prod })));
     } catch (error) {
       console.error('Failed to fetch production data', error);

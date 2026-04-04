@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+dist
+.git
+.vscode
+Dockerfile
+docker-compose*
+*.md
+server/node_modules
+server/dist

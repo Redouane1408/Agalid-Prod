@@ -9,6 +9,9 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ProductsModule } from './products/products.module';
 import { HealthModule } from './health/health.module';
+import { OwnerSettingsModule } from './owner-settings/owner-settings.module';
+
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -20,7 +23,9 @@ import { HealthModule } from './health/health.module';
     IntegrationsModule,
     DashboardModule,
     ProductsModule,
+    OwnerSettingsModule,
     HealthModule,
+    UploadModule,
   ],
   providers: [PrismaService],
 })

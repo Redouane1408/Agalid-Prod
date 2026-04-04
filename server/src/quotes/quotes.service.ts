@@ -1,12 +1,38 @@
-import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as nodemailer from 'nodemailer';
 import { WhatsappService } from './whatsapp.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import { OwnerSettingsService } from '../owner-settings/owner-settings.service';
+import { OwnerSettings, Prisma } from '@prisma/client';
 
 @Injectable()
 export class QuotesService {
+  private getQuoteReference(quoteId: number) {
+    return `AGL-${quoteId.toString().padStart(6, '0')}`;
+  }
+
+  private getQuoteDocumentName(quoteId: number) {
+    return `devis-agalid-${this.getQuoteReference(quoteId)}`;
+  }
+
+  private getRoofTypeLabel(roofType: string) {
+    if (roofType === 'flat') return 'Plat';
+    if (roofType === 'sloped') return 'Incliné';
+    if (roofType === 'mixed') return 'Mixte';
+    return roofType;
+  }
+
+  private getAnnualProduction(systemKw: number, peakSunHours: number) {
+    const dailyProduction = systemKw * Math.max(peakSunHours || 0, 1) * 0.85;
+    return Math.round(dailyProduction * 365);
+  }
+
+  private getSurfaceEstimate(panelCount: number) {
+    return Math.ceil(panelCount * 2.2);
+  }
+
   private log(message: string, data?: unknown) {
     const logDir = path.join(process.cwd(), 'logs');
     if (!fs.existsSync(logDir)) {
@@ -30,34 +56,285 @@ export class QuotesService {
 
   constructor(
     private prisma: PrismaService,
-    private whatsappService: WhatsappService
+    private whatsappService: WhatsappService,
+    private ownerSettingsService: OwnerSettingsService,
   ) {}
 
-  private calculate(form: {
-    monthlyConsumption: number;
-    peakSunHours: number;
+  private parseJsonObject(value: Prisma.JsonValue | null | undefined) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return {};
+    }
+    return value as Record<string, unknown>;
+  }
+
+  private getNumericSpec(specs: Prisma.JsonValue | null | undefined, keys: string[]) {
+    const parsed = this.parseJsonObject(specs);
+
+    for (const key of keys) {
+      const raw = parsed[key];
+      if (typeof raw === 'number' && Number.isFinite(raw)) {
+        return raw;
+      }
+      if (typeof raw === 'string') {
+        const normalized = raw.replace(',', '.');
+        const numeric = parseFloat(normalized.replace(/[^\d.]/g, ''));
+        if (Number.isFinite(numeric)) {
+          return numeric;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private getProductPowerKw(product: { specs?: Prisma.JsonValue | null } | null | undefined, fallbackPowerKw: number) {
+    if (!product) {
+      return fallbackPowerKw;
+    }
+
+    const numeric = this.getNumericSpec(product.specs, ['power', 'puissance', 'watts', 'w', 'powerKw', 'puissanceKw']);
+    if (!numeric || numeric <= 0) {
+      return fallbackPowerKw;
+    }
+
+    return numeric > 10 ? numeric / 1000 : numeric;
+  }
+
+  private getBusinessRules(settings: OwnerSettings) {
+    const raw = this.parseJsonObject(settings.businessRules);
+    return {
+      productSelectionStrategy: String(raw.productSelectionStrategy || 'best_price_per_power'),
+      panelCategoryKeyword: String(raw.panelCategoryKeyword || 'Panneaux'),
+      inverterCategoryKeyword: String(raw.inverterCategoryKeyword || 'Onduleur'),
+      preferredPanelProductId: raw.preferredPanelProductId ? Number(raw.preferredPanelProductId) : null,
+      preferredInverterProductId: raw.preferredInverterProductId ? Number(raw.preferredInverterProductId) : null,
+      includeMaintenanceInQuote: Boolean(raw.includeMaintenanceInQuote || false),
+    };
+  }
+
+  private getMultiplier(json: Prisma.JsonValue | null | undefined, key: string) {
+    const source = this.parseJsonObject(json);
+    const value = source[key];
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value.replace(',', '.'));
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+    return 1;
+  }
+
+  private roundCurrency(value: number) {
+    return Math.round(value);
+  }
+
+  private buildQuoteBreakdown(params: {
+    settings: OwnerSettings;
+    request: {
+      clientType: string;
+      roofType: string;
+      hasShading: boolean;
+      monthlyConsumption: number;
+      peakSunHours: number;
+    };
+    panelProduct: { id: number; name: string; price: number; specs?: Prisma.JsonValue | null };
+    inverterProduct: { id: number; name: string; price: number; specs?: Prisma.JsonValue | null };
   }) {
-    const systemEfficiency = 0.85;
-    const panelWattageW = 400; // 400 W par panneau
-    const panelWattageKW = panelWattageW / 1000; // 0.4 kW
-    const systemCostPerKW = 180000; // DZD/kW
-    // Consommation journalière (kWh/jour)
-    const dailyConsumption = form.monthlyConsumption / 30;
-    // Puissance système requise (kW) : énergie/(heures * PR)
-    const requiredSystemKw = dailyConsumption / Math.max(1, form.peakSunHours * systemEfficiency);
-    // Nombre de panneaux nécessaire
-    const panelCount = Math.max(1, Math.ceil(requiredSystemKw / panelWattageKW));
-    // Taille du système dimensionné (kW)
-    const systemKW = panelCount * panelWattageKW;
-    // Coût estimé
-    const systemCost = systemKW * systemCostPerKW;
-    return { panelCount, systemKW, systemCost };
+    const { settings, request, panelProduct, inverterProduct } = params;
+    const businessRules = this.getBusinessRules(settings);
+    const panelPowerKw = this.getProductPowerKw(panelProduct, settings.defaultPanelPowerKw);
+    const inverterPowerKw = this.getProductPowerKw(inverterProduct, panelPowerKw);
+    const systemEfficiency = settings.defaultSystemEfficiency;
+    const dailyConsumption = request.monthlyConsumption / 30;
+    const requiredSystemKw = dailyConsumption / Math.max(1, request.peakSunHours * systemEfficiency);
+    const panelCount = Math.max(settings.minimumPanelCount, Math.ceil(requiredSystemKw / panelPowerKw));
+    const systemKw = Number((panelCount * panelPowerKw).toFixed(3));
+    const requiredInverterKw = Number((systemKw * settings.inverterSizingSafetyFactor).toFixed(3));
+    const panelSubtotalDa = this.roundCurrency(panelCount * panelProduct.price);
+    const inverterSubtotalDa = this.roundCurrency(inverterProduct.price);
+    const roofMultiplier = this.getMultiplier(settings.roofTypeMultipliers, request.roofType);
+    const clientMultiplier = this.getMultiplier(settings.clientTypeMultipliers, request.clientType);
+    const baseInstallationDa =
+      settings.installationBaseCostDa +
+      panelCount * settings.installationCostPerPanelDa +
+      panelCount * settings.structureCostPerPanelDa +
+      systemKw * settings.cablingCostPerKwDa +
+      settings.protectionCostDa +
+      settings.transportCostDa +
+      (businessRules.includeMaintenanceInQuote ? settings.maintenanceCostDa : 0);
+    const installationBeforeShadingDa = baseInstallationDa * roofMultiplier * clientMultiplier;
+    const shadingSubtotalDa = request.hasShading
+      ? installationBeforeShadingDa * (settings.shadingCostPercent / 100)
+      : 0;
+    const installationSubtotalDa = this.roundCurrency(installationBeforeShadingDa + shadingSubtotalDa);
+    const hardwareSubtotalDa = this.roundCurrency(panelSubtotalDa + inverterSubtotalDa);
+    const subtotalBeforeMarginDa = hardwareSubtotalDa + installationSubtotalDa;
+    const marginSubtotalDa = this.roundCurrency(subtotalBeforeMarginDa * (settings.marginPercent / 100));
+    const taxSubtotalDa = this.roundCurrency((subtotalBeforeMarginDa + marginSubtotalDa) * (settings.taxPercent / 100));
+    const totalDa = hardwareSubtotalDa + installationSubtotalDa + marginSubtotalDa + taxSubtotalDa;
+    const annualProductionKwh = Math.round(systemKw * Math.max(request.peakSunHours, 1) * systemEfficiency * 365);
+    const surfaceEstimateM2 = Math.ceil(panelCount * settings.defaultPanelAreaM2);
+
+    return {
+      panelCount,
+      systemKw,
+      requiredSystemKw: Number(requiredSystemKw.toFixed(3)),
+      requiredInverterKw,
+      hardwareSubtotalDa,
+      installationSubtotalDa,
+      marginSubtotalDa,
+      taxSubtotalDa,
+      totalDa,
+      annualProductionKwh,
+      surfaceEstimateM2,
+      systemEfficiency,
+      quoteValidityDays: settings.quoteValidityDays,
+      panelPowerKw,
+      inverterPowerKw,
+      lineItems: [
+        {
+          type: 'hardware',
+          label: panelProduct.name,
+          quantity: panelCount,
+          unitPriceDa: this.roundCurrency(panelProduct.price),
+          totalDa: panelSubtotalDa,
+        },
+        {
+          type: 'hardware',
+          label: inverterProduct.name,
+          quantity: 1,
+          unitPriceDa: this.roundCurrency(inverterProduct.price),
+          totalDa: inverterSubtotalDa,
+        },
+        {
+          type: 'service',
+          label: 'Installation et mise en service',
+          quantity: 1,
+          unitPriceDa: installationSubtotalDa,
+          totalDa: installationSubtotalDa,
+        },
+        {
+          type: 'service',
+          label: 'Marge commerciale',
+          quantity: 1,
+          unitPriceDa: marginSubtotalDa,
+          totalDa: marginSubtotalDa,
+        },
+        {
+          type: 'service',
+          label: 'Taxes',
+          quantity: 1,
+          unitPriceDa: taxSubtotalDa,
+          totalDa: taxSubtotalDa,
+        },
+      ],
+      formulas: {
+        dailyConsumption: 'monthlyConsumption / 30',
+        requiredSystemKw: 'dailyConsumption / (peakSunHours * systemEfficiency)',
+        panelCount: 'ceil(requiredSystemKw / panelPowerKw)',
+        installationSubtotalDa: 'base + perPanel + structure + cabling + protection + transport + maintenance, puis multiplicateurs et ombrage',
+        marginSubtotalDa: '(hardwareSubtotalDa + installationSubtotalDa) * marginPercent / 100',
+        taxSubtotalDa: '(hardwareSubtotalDa + installationSubtotalDa + marginSubtotalDa) * taxPercent / 100',
+      },
+    };
+  }
+
+  private async selectPanelProduct(settings: OwnerSettings) {
+    const rules = this.getBusinessRules(settings);
+
+    if (rules.preferredPanelProductId) {
+      const preferred = await this.prisma.product.findUnique({
+        where: { id: rules.preferredPanelProductId },
+        include: { category: true },
+      });
+      if (preferred) {
+        return preferred;
+      }
+    }
+
+    const panelCategory = await this.prisma.category.findFirst({
+      where: { name: { contains: rules.panelCategoryKeyword, mode: 'insensitive' } },
+    });
+
+    if (!panelCategory) {
+      throw new BadRequestException(`Aucune catégorie panneau trouvée pour "${rules.panelCategoryKeyword}"`);
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { categoryId: panelCategory.id },
+      include: { category: true },
+    });
+
+    if (products.length === 0) {
+      throw new BadRequestException('Aucun produit panneau disponible dans la base');
+    }
+
+    if (rules.productSelectionStrategy === 'lowest_price') {
+      return products.sort((a, b) => a.price - b.price)[0];
+    }
+
+    return products
+      .map((product) => ({
+        product,
+        ratio: product.price / this.getProductPowerKw(product, settings.defaultPanelPowerKw),
+      }))
+      .sort((a, b) => a.ratio - b.ratio)[0].product;
+  }
+
+  private async selectInverterProduct(settings: OwnerSettings, requiredInverterKw: number) {
+    const rules = this.getBusinessRules(settings);
+
+    if (rules.preferredInverterProductId) {
+      const preferred = await this.prisma.product.findUnique({
+        where: { id: rules.preferredInverterProductId },
+        include: { category: true },
+      });
+      if (preferred) {
+        return preferred;
+      }
+    }
+
+    const inverterCategory = await this.prisma.category.findFirst({
+      where: { name: { contains: rules.inverterCategoryKeyword, mode: 'insensitive' } },
+    });
+
+    if (!inverterCategory) {
+      throw new BadRequestException(`Aucune catégorie onduleur trouvée pour "${rules.inverterCategoryKeyword}"`);
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { categoryId: inverterCategory.id },
+      include: { category: true },
+    });
+
+    if (products.length === 0) {
+      throw new BadRequestException('Aucun produit onduleur disponible dans la base');
+    }
+
+    const compatibleProducts = products.filter((product) => this.getProductPowerKw(product, settings.defaultPanelPowerKw) >= requiredInverterKw);
+    const pool = compatibleProducts.length > 0 ? compatibleProducts : products;
+    return pool.sort((a, b) => a.price - b.price)[0];
   }
 
   private generateEmailTemplate(quote: {
+    id: number;
+    createdAt: Date;
     systemKw: number;
     panelCount: number;
     totalDa: number;
+    hardwareSubtotalDa: number;
+    installationSubtotalDa: number;
+    marginSubtotalDa: number;
+    taxSubtotalDa: number;
+    calculationSnapshot?: Prisma.JsonValue | null;
+    items?: {
+      product: { name: string; description?: string | null };
+      quantity: number;
+      unitPrice: number;
+    }[];
     request: {
       name: string;
       location: string;
@@ -72,10 +349,59 @@ export class QuotesService {
     const dzdFormatter = new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 });
     const numberFormatter = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
     const year = new Date().getFullYear();
-    
-    // Estimate annual production (daily * 365)
-    const dailyProd = (quote.systemKw * (quote.request.peakSunHours || 5)) * 0.85; 
-    const annualProd = dailyProd * 365;
+    const quoteReference = this.getQuoteReference(quote.id);
+    const snapshot = this.parseJsonObject(quote.calculationSnapshot);
+    const quoteDate = new Date(quote.createdAt).toLocaleDateString('fr-FR');
+    const validityDays = Number(snapshot.quoteValidityDays || 30);
+    const validUntil = new Date(quote.createdAt.getTime() + validityDays * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR');
+    const annualProd = Number(snapshot.annualProductionKwh || this.getAnnualProduction(quote.systemKw, quote.request.peakSunHours || 5));
+    const surface = Number(snapshot.surfaceEstimateM2 || this.getSurfaceEstimate(quote.panelCount));
+    const lineItems = Array.isArray(snapshot.lineItems) ? snapshot.lineItems as Array<Record<string, unknown>> : [];
+
+    const itemsList = quote.items && quote.items.length > 0 
+      ? `<div class="section-title">Équipements Inclus</div>
+         <div class="details-list">
+           ${quote.items.map(item => `
+             <div class="detail-row">
+               <div>
+                 <div class="detail-label">${item.product.name}</div>
+                 ${item.product.description ? `<div class="detail-sub">${item.product.description}</div>` : ''}
+               </div>
+               <span class="detail-value">x${item.quantity} · ${dzdFormatter.format(item.unitPrice)} / unité · ${dzdFormatter.format(item.unitPrice * item.quantity)}</span>
+             </div>
+           `).join('')}
+         </div>`
+      : '';
+    const costBreakdown = lineItems.length > 0
+      ? `<div class="section-title">Ventilation Financière</div>
+         <div class="details-list">
+           ${lineItems.map((item) => `
+             <div class="detail-row">
+               <span class="detail-label">${String(item.label || 'Ligne')}</span>
+               <span class="detail-value">${dzdFormatter.format(Number(item.totalDa || 0))}</span>
+             </div>
+           `).join('')}
+         </div>`
+      : '';
+    const subtotalBreakdown = `<div class="section-title">Sous-Totaux</div>
+      <div class="details-list">
+        <div class="detail-row">
+          <span class="detail-label">Matériel</span>
+          <span class="detail-value">${dzdFormatter.format(quote.hardwareSubtotalDa)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Installation</span>
+          <span class="detail-value">${dzdFormatter.format(quote.installationSubtotalDa)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Marge</span>
+          <span class="detail-value">${dzdFormatter.format(quote.marginSubtotalDa)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Taxes</span>
+          <span class="detail-value">${dzdFormatter.format(quote.taxSubtotalDa)}</span>
+        </div>
+      </div>`;
 
     return `
       <!DOCTYPE html>
@@ -113,6 +439,7 @@ export class QuotesService {
           .detail-row { display: flex; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
           .detail-row:last-child { border-bottom: none; }
           .detail-label { color: #64748b; font-size: 15px; }
+          .detail-sub { color: #94a3b8; font-size: 12px; margin-top: 4px; max-width: 320px; line-height: 1.4; }
           .detail-value { color: #334155; font-weight: 600; font-size: 15px; }
 
           .total-section { 
@@ -154,8 +481,24 @@ export class QuotesService {
             <div class="greeting">Bonjour ${quote.request.name},</div>
             <p class="intro">
               Nous avons bien reçu votre demande pour votre projet à <strong>${quote.request.location}</strong>. 
-              Voici votre étude personnalisée, conçue pour maximiser votre indépendance énergétique.
+              Vous trouverez ci-joint votre devis PDF. Les informations ci-dessous correspondent exactement au devis généré.
             </p>
+
+            <div class="section-title">Référence du Devis</div>
+            <div class="details-list">
+              <div class="detail-row">
+                <span class="detail-label">N° devis</span>
+                <span class="detail-value">${quoteReference}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date</span>
+                <span class="detail-value">${quoteDate}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Validité</span>
+                <span class="detail-value">${validUntil}</span>
+              </div>
+            </div>
             
             <div class="section-title">Votre Installation Recommandée</div>
             <div class="card-grid">
@@ -173,15 +516,19 @@ export class QuotesService {
               </div>
               <div class="card">
                 <span class="card-label">Surface Requise</span>
-                <span class="card-value">~${Math.ceil(quote.panelCount * 2)} <span class="card-unit">m²</span></span>
+                <span class="card-value">~${surface} <span class="card-unit">m²</span></span>
               </div>
             </div>
+
+            ${itemsList}
+            ${costBreakdown}
+            ${subtotalBreakdown}
 
             <div class="section-title">Détails du Projet</div>
             <div class="details-list">
               <div class="detail-row">
                 <span class="detail-label">Type de toit</span>
-                <span class="detail-value">${quote.request.roofType === 'flat' ? 'Plat' : quote.request.roofType === 'sloped' ? 'Incliné' : 'Mixte'}</span>
+                <span class="detail-value">${this.getRoofTypeLabel(quote.request.roofType)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Consommation actuelle</span>
@@ -233,19 +580,65 @@ export class QuotesService {
   async createForRequest(requestId: number) {
     const req = await this.prisma.clientRequest.findUnique({ where: { id: requestId } });
     if (!req) throw new NotFoundException('Request not found');
-    const calc = this.calculate({ monthlyConsumption: req.monthlyConsumption, peakSunHours: req.peakSunHours });
+    const settings = await this.ownerSettingsService.getSettings();
+    const panelProduct = await this.selectPanelProduct(settings);
+    const initialBreakdown = this.buildQuoteBreakdown({
+      settings,
+      request: req,
+      panelProduct,
+      inverterProduct: {
+        id: 0,
+        name: 'Onduleur provisoire',
+        price: 0,
+        specs: { powerKw: panelProduct ? this.getProductPowerKw(panelProduct, settings.defaultPanelPowerKw) : settings.defaultPanelPowerKw },
+      },
+    });
+    const inverterProduct = await this.selectInverterProduct(settings, initialBreakdown.requiredInverterKw);
+    const breakdown = this.buildQuoteBreakdown({
+      settings,
+      request: req,
+      panelProduct,
+      inverterProduct,
+    });
+
     const quote = await this.prisma.quote.create({
       data: {
         requestId: req.id,
-        totalDa: Math.round(calc.systemCost),
-        panelCount: calc.panelCount,
-        systemKw: calc.systemKW,
+        totalDa: breakdown.totalDa,
+        hardwareSubtotalDa: breakdown.hardwareSubtotalDa,
+        installationSubtotalDa: breakdown.installationSubtotalDa,
+        marginSubtotalDa: breakdown.marginSubtotalDa,
+        taxSubtotalDa: breakdown.taxSubtotalDa,
+        panelCount: breakdown.panelCount,
+        systemKw: breakdown.systemKw,
         status: 'DRAFT',
+        calculationSnapshot: {
+          settingsId: settings.id,
+          generatedAt: new Date().toISOString(),
+          businessRules: this.getBusinessRules(settings),
+          roofMultiplier: this.getMultiplier(settings.roofTypeMultipliers, req.roofType),
+          clientMultiplier: this.getMultiplier(settings.clientTypeMultipliers, req.clientType),
+          ...breakdown,
+        },
+        items: {
+          create: [
+            {
+              product: { connect: { id: panelProduct.id } },
+              quantity: breakdown.panelCount,
+              unitPrice: panelProduct.price,
+            },
+            {
+              product: { connect: { id: inverterProduct.id } },
+              quantity: 1,
+              unitPrice: inverterProduct.price,
+            },
+          ]
+        }
       },
+      include: { request: true, items: { include: { product: { include: { category: true } } } } }
     });
 
     // Automatically trigger WhatsApp sending
-    // We don't await this to ensure the response is fast, but we log errors
     this.sendWhatsApp(quote.id).catch(err => {
       this.log('Failed to auto-send WhatsApp after creation', err);
     });
@@ -253,12 +646,24 @@ export class QuotesService {
     return quote;
   }
 
-  async sendEmail(quoteId: number) {
+  async sendEmail(
+    quoteId: number,
+    attachment?: {
+      pdfBase64?: string;
+      filename?: string;
+      mimeType?: string;
+    }
+  ) {
+    const settings = await this.ownerSettingsService.getSettings();
     const quote = await this.prisma.quote.findUnique({
       where: { id: quoteId },
-      include: { request: true },
+      include: { request: true, items: { include: { product: { include: { category: true } } } } },
     });
     if (!quote) {
+      return;
+    }
+    if (!settings.sendEmailQuote) {
+      this.log('Email sending disabled by owner settings', { quoteId });
       return;
     }
     const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
@@ -281,7 +686,20 @@ export class QuotesService {
       
       this.log('Transport created. Sending mail...');
       const html = this.generateEmailTemplate(quote);
-      await transport.sendMail({ to: quote.request.email, from, subject: `Votre étude solaire Agalid - ${quote.request.name}`, html });
+      const attachments = attachment?.pdfBase64
+        ? [{
+            filename: attachment.filename || `${this.getQuoteDocumentName(quote.id)}.pdf`,
+            content: Buffer.from(attachment.pdfBase64, 'base64'),
+            contentType: attachment.mimeType || 'application/pdf'
+          }]
+        : [];
+      await transport.sendMail({
+        to: quote.request.email,
+        from,
+        subject: `Votre devis solaire ${this.getQuoteReference(quote.id)} - ${quote.request.name}`,
+        html,
+        attachments
+      });
       this.log('Email sent successfully');
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
     } catch (e: unknown) {
@@ -296,6 +714,7 @@ export class QuotesService {
   }
 
   async sendWhatsApp(quoteId: number) {
+    const settings = await this.ownerSettingsService.getSettings();
     const quote = await this.prisma.quote.findUnique({
       where: { id: quoteId },
       include: { request: true },
@@ -305,24 +724,34 @@ export class QuotesService {
     const deliver = (process.env.SEND_DELIVERY || 'false').toLowerCase() === 'true';
     this.log('Sending WhatsApp logic triggered', { deliver, quoteId });
 
+    if (!settings.sendWhatsappQuote) {
+      return {
+        ok: false,
+        error: { message: 'WhatsApp désactivé par les paramètres administrateur' },
+      };
+    }
+
     if (!deliver) {
       await this.prisma.quote.update({ where: { id: quoteId }, data: { status: 'SENT', sentAt: new Date() } });
       return;
     }
 
     const to = quote.request.phone;
+    if (!to) {
+      this.log('WhatsApp send skipped: No phone number provided');
+      return { ok: false, error: { message: 'No phone number' } };
+    }
     
     // Use env-configurable template and language (defaults chosen for Meta)
     const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'quote_notification';
     const languageCode = process.env.WHATSAPP_LANGUAGE || 'fr';
-    
     const dzdFormatter = new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 });
     const numFormatter = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+    const quoteSnapshot = this.parseJsonObject(quote.calculationSnapshot);
+    const annualProd = Number(
+      quoteSnapshot.annualProductionKwh || this.getAnnualProduction(quote.systemKw, quote.request.peakSunHours || 5),
+    );
     
-    // Calculate estimated annual production
-    const dailyProd = (quote.systemKw * (quote.request.peakSunHours || 5)) * 0.85; 
-    const annualProd = Math.round(dailyProd * 365);
-
     const parameters = [
       { type: 'text', text: quote.request.name },                    // {{1}} Name
       { type: 'text', text: quote.request.location },                // {{2}} Location

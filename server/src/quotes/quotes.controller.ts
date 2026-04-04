@@ -1,4 +1,4 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { QuotesService } from './quotes.service';
 
 @Controller('quotes')
@@ -8,12 +8,15 @@ export class QuotesController {
   @Post(':requestId/create')
   async create(@Param('requestId') requestId: string) {
     const quote = await this.quotesService.createForRequest(Number(requestId));
-    return { id: quote.id };
+    return quote;
   }
 
   @Post(':id/send-email')
-  async sendEmail(@Param('id') id: string) {
-    this.quotesService.sendEmail(Number(id)).catch(() => {});
+  async sendEmail(
+    @Param('id') id: string,
+    @Body() body?: { pdfBase64?: string; filename?: string; mimeType?: string }
+  ) {
+    await this.quotesService.sendEmail(Number(id), body);
     return { ok: true };
   }
 

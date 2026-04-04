@@ -4,28 +4,50 @@ import axios from 'axios';
 @Injectable()
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
-  private readonly API_URL = 'https://api.open-meteo.com/v1/forecast';
+  private readonly FORECAST_API_URL = 'https://api.open-meteo.com/v1/forecast';
+  private readonly ARCHIVE_API_URL = 'https://archive-api.open-meteo.com/v1/archive';
 
-  /**
-   * Fetch solar irradiance forecast for the next 24 hours
-   * Default location: Paris (can be parameterized per user in the future)
-   */
-  async getSolarForecast(latitude = 48.8566, longitude = 2.3522) {
+  async getSolarForecast(latitude = 36.7538, longitude = 3.0588, timezone = 'Africa/Algiers', forecastDays = 1) {
     try {
-      const response = await axios.get(this.API_URL, {
+      const response = await axios.get(this.FORECAST_API_URL, {
         params: {
           latitude,
           longitude,
           hourly: 'direct_radiation,diffuse_radiation,shortwave_radiation',
-          timezone: 'Europe/Paris',
-          forecast_days: 1,
+          timezone,
+          forecast_days: forecastDays,
         },
       });
 
       return this.processSolarData(response.data);
     } catch (error) {
       this.logger.error('Failed to fetch weather data', error);
-      // Fallback to null or empty data to handle gracefully
+      return null;
+    }
+  }
+
+  async getSolarArchive(
+    latitude = 36.7538,
+    longitude = 3.0588,
+    timezone = 'Africa/Algiers',
+    startDate: string,
+    endDate: string,
+  ) {
+    try {
+      const response = await axios.get(this.ARCHIVE_API_URL, {
+        params: {
+          latitude,
+          longitude,
+          hourly: 'direct_radiation,diffuse_radiation,shortwave_radiation',
+          timezone,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      });
+
+      return this.processSolarData(response.data);
+    } catch (error) {
+      this.logger.error('Failed to fetch archive weather data', error);
       return null;
     }
   }
@@ -38,10 +60,9 @@ export class WeatherService {
     const { time, direct_radiation } = data.hourly;
     
     return time.map((t: string, index: number) => ({
-      time: t.substring(11, 16), // Extract HH:mm
-      // Simple approximation: 1W/m² roughly translates to potential production
-      // We'll normalize this in the DashboardService
-      irradiance: direct_radiation[index] || 0, 
+      time: t.substring(11, 16),
+      timestamp: t,
+      irradiance: direct_radiation[index] || 0,
     }));
   }
 }

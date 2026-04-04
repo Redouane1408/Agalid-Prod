@@ -37,26 +37,61 @@ model ClientRequest {
 }
 
 model Quote {
-  id         Int       @id @default(autoincrement())
-  createdAt  DateTime  @default(now())
-  requestId  Int
-  request    ClientRequest @relation(fields: [requestId], references: [id])
-  totalDa    Int
-  panelCount Int
-  systemKw   Float
-  status     String
-  sentAt     DateTime?
+  id                   Int       @id @default(autoincrement())
+  createdAt            DateTime  @default(now())
+  requestId            Int
+  request              ClientRequest @relation(fields: [requestId], references: [id])
+  totalDa              Int
+  hardwareSubtotalDa   Int       @default(0)
+  installationSubtotalDa Int     @default(0)
+  marginSubtotalDa     Int       @default(0)
+  taxSubtotalDa        Int       @default(0)
+  panelCount           Int
+  systemKw             Float
+  status               String
+  sentAt               DateTime?
+  calculationSnapshot  Json?
+  items                QuoteItem[]
+}
+
+model QuoteItem {
+  id        Int     @id @default(autoincrement())
+  quoteId   Int
+  quote     Quote   @relation(fields: [quoteId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Float
 }
 
 model OwnerSettings {
-  id                 Int      @id @default(autoincrement())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  services           String[]
-  displayQuoteOnSite Boolean   @default(true)
-  sendEmailQuote     Boolean   @default(true)
-  sendWhatsappQuote  Boolean   @default(true)
-  requiredFields     String[]
+  id                       Int      @id @default(autoincrement())
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  services                 String[]
+  displayQuoteOnSite       Boolean   @default(true)
+  sendEmailQuote           Boolean   @default(true)
+  sendWhatsappQuote        Boolean   @default(true)
+  requiredFields           String[]
+  defaultSystemEfficiency  Float     @default(0.85)
+  defaultPanelAreaM2       Float     @default(2.2)
+  defaultPanelPowerKw      Float     @default(0.55)
+  minimumPanelCount        Int       @default(1)
+  inverterSizingSafetyFactor Float   @default(1.1)
+  quoteValidityDays        Int       @default(30)
+  installationBaseCostDa   Int       @default(0)
+  installationCostPerPanelDa Int     @default(0)
+  structureCostPerPanelDa  Int       @default(0)
+  cablingCostPerKwDa       Int       @default(0)
+  protectionCostDa         Int       @default(0)
+  transportCostDa          Int       @default(0)
+  maintenanceCostDa        Int       @default(0)
+  shadingCostPercent       Float     @default(0)
+  marginPercent            Float     @default(0)
+  taxPercent               Float     @default(0)
+  roofTypeMultipliers      Json?
+  clientTypeMultipliers    Json?
+  businessRules            Json?
 }
 
 model User {
@@ -99,11 +134,13 @@ model Product {
   description String
   price       Float
   image       String?
+  images      String[]
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
   stock       Int      @default(0)
   specs       Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  quoteItems  QuoteItem[]
 }
 
