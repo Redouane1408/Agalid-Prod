@@ -5,11 +5,22 @@
 agalid.com, www.agalid.com, 197.201.240.218 {
     encode gzip
 
+    log {
+        output stdout
+        format console
+    }
+
+    handle /api/webhooks/whatsapp* {
+        reverse_proxy server:4000
+    }
+
     handle /api* {
+        log_skip
         reverse_proxy server:4000
     }
 
     handle {
+        log_skip
         reverse_proxy frontend:80
     }
 }
