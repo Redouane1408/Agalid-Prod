@@ -8,12 +8,14 @@ export class WhatsappService implements OnModuleInit {
   private accessToken: string;
   private phoneNumberId: string;
   private apiVersion = 'v17.0'; // Or latest stable version
+  private displayPhoneNumber: string | null = null;
+  private verifiedName: string | null = null;
 
   constructor() {
     // Client will be initialized in onModuleInit
   }
 
-  onModuleInit() {
+  async onModuleInit() {
     this.accessToken = (process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || '').trim();
     this.phoneNumberId = (process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID || '').trim();
     const isExplicitlyDisabled = (process.env.WHATSAPP_ENABLED || '').trim().toLowerCase() === 'false';
@@ -30,6 +32,28 @@ export class WhatsappService implements OnModuleInit {
 
     this.isEnabled = true;
     this.logger.log('WhatsApp (Meta) Client Initialized');
+
+    try {
+      const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}`;
+      const response = await axios.get(url, {
+        params: { fields: 'id,display_phone_number,verified_name' },
+        headers: { 'Authorization': `Bearer ${this.accessToken}` },
+      });
+      this.displayPhoneNumber = response.data?.display_phone_number ?? null;
+      this.verifiedName = response.data?.verified_name ?? null;
+      this.logger.log(
+        `WhatsApp Sender Loaded: ${this.displayPhoneNumber || 'unknown'} (${this.verifiedName || 'unknown'})`
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        this.logger.error(
+          `Failed to load WhatsApp sender info: ${error.message}`,
+          JSON.stringify(error.response?.data || {})
+        );
+      } else {
+        this.logger.error('Failed to load WhatsApp sender info', error as unknown);
+      }
+    }
   }
 
   private normalizeRecipient(to: string): string {
@@ -94,7 +118,17 @@ export class WhatsappService implements OnModuleInit {
       const messageId = response.data?.messages?.[0]?.id ?? null;
       const waId = response.data?.contacts?.[0]?.wa_id ?? null;
       this.logger.log(`Template Message accepted by Meta. ID: ${messageId}`);
-      return { recipient, messageId, waId, raw: response.data };
+      return {
+        recipient,
+        messageId,
+        waId,
+        sender: {
+          phoneNumberId: this.phoneNumberId,
+          displayPhoneNumber: this.displayPhoneNumber,
+          verifiedName: this.verifiedName,
+        },
+        raw: response.data
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         this.logger.error(
