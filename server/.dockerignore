@@ -3,6 +3,8 @@ npm-debug.log
 dist
 .git
 .vscode
+.env
+.env.*
 Dockerfile
 docker-compose*
 *.md
