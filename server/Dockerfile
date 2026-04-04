@@ -9,6 +9,7 @@ RUN npm ci
 # App source
 COPY . .
 
+RUN rm -f .env .env.* || true
 
 # Generate Prisma client
 RUN npx prisma generate
