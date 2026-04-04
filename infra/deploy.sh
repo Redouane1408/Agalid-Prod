@@ -108,22 +108,11 @@ wait_for_api() {
         exit 1
     fi
 
-    if groups $USER | grep &>/dev/null 'docker'; then
-        NETWORK_NAME="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$SERVER_ID" | head -n 1)"
-    else
-        NETWORK_NAME="$(echo "$SSHPASS" | sudo -S docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$SERVER_ID" | head -n 1)"
-    fi
-
-    if [ -z "$NETWORK_NAME" ]; then
-        echo "Error: could not detect docker network name"
-        exit 1
-    fi
-
     for i in {1..60}; do
         if groups $USER | grep &>/dev/null 'docker'; then
-            STATUS="$(docker run --rm --network "$NETWORK_NAME" curlimages/curl:8.7.1 -s -o /dev/null -w "%{http_code}" http://server:4000/api/health || true)"
+            STATUS="$(docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' || true)"
         else
-            STATUS="$(echo "$SSHPASS" | sudo -S docker run --rm --network "$NETWORK_NAME" curlimages/curl:8.7.1 -s -o /dev/null -w "%{http_code}" http://server:4000/api/health || true)"
+            STATUS="$(echo "$SSHPASS" | sudo -S docker exec "$SERVER_ID" sh -lc 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4000/api/health || true' || true)"
         fi
 
         echo "API check $i/60 -> $STATUS"
