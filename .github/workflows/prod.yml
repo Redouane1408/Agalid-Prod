@@ -273,6 +273,30 @@ jobs:
               $DC -f infra/docker-compose.prod.yml ps
               $DC -f infra/docker-compose.prod.yml images
 
+              SERVER_ID=$($DC -f infra/docker-compose.prod.yml ps -q server || true)
+              if [ -n "$SERVER_ID" ]; then
+                echo "Server container: $SERVER_ID"
+                docker inspect -f 'Image={{.Image}} Created={{.Created}}' "$SERVER_ID" || true
+                echo "----- server localhost health -----"
+                docker exec "$SERVER_ID" sh -lc 'curl -sS -i http://127.0.0.1:4000/health | head -n 60' || true
+                echo "----- server localhost health/db -----"
+                docker exec "$SERVER_ID" sh -lc 'curl -sS -i http://127.0.0.1:4000/health/db | head -n 60' || true
+                echo "----- server logs (tail) -----"
+                $DC -f infra/docker-compose.prod.yml logs --tail 200 server || true
+              else
+                echo "⚠️ No server container found"
+              fi
+
+              PROXY_ID=$($DC -f infra/docker-compose.prod.yml ps -q proxy || true)
+              if [ -n "$PROXY_ID" ]; then
+                echo "Proxy container: $PROXY_ID"
+                docker inspect -f 'Image={{.Image}} Created={{.Created}}' "$PROXY_ID" || true
+                echo "----- proxy logs (tail) -----"
+                $DC -f infra/docker-compose.prod.yml logs --tail 200 proxy || true
+              else
+                echo "⚠️ No proxy container found"
+              fi
+
               FRONT_ID=$($DC -f infra/docker-compose.prod.yml ps -q frontend || true)
               if [ -n "$FRONT_ID" ]; then
                 echo "Frontend container: $FRONT_ID"
@@ -287,6 +311,10 @@ jobs:
                 curl -sI http://127.0.0.1/ | head -n 30 || true
                 echo "----- localhost html (top) -----"
                 curl -s http://127.0.0.1/ | head -n 30 || true
+                echo "----- localhost api (headers) -----"
+                curl -sI http://127.0.0.1/api/health | head -n 30 || true
+                echo "----- localhost api (body top) -----"
+                curl -s http://127.0.0.1/api/health | head -n 30 || true
               elif command -v wget >/dev/null 2>&1; then
                 wget -qSO- http://127.0.0.1/ 2>&1 | head -n 60 || true
               else
@@ -337,7 +365,7 @@ jobs:
           for url in "${urls[@]}"; do
             echo "⏳ Checking $url ..."
             for i in {1..20}; do
-              STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" "$url" || true)
+              STATUS=$(curl -k -L -s -o /dev/null -w "%{http_code}" "$url" || true)
               echo "Attempt $i -> $STATUS"
               if [ "$STATUS" = "200" ]; then
                 echo "✅ API health OK at $url"
@@ -345,6 +373,10 @@ jobs:
               fi
               sleep 6
             done
+            echo "----- debug: $url (headers) -----"
+            curl -k -IL -s "$url" | head -n 40 || true
+            echo "----- debug: $url (body top) -----"
+            curl -k -L -s "$url" | head -n 40 || true
           done
           echo "❌ No health endpoint responded with 200"
           exit 1
