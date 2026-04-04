@@ -10,8 +10,8 @@ export class WhatsappWebhookController {
     @Query('hub.challenge') challenge: string | undefined,
     @Res() res: Response
   ) {
-    const verifyToken = (process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '').trim();
-    if (mode === 'subscribe' && token && verifyToken && token === verifyToken && challenge) {
+    const verifyToken = (process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'agalid_verify_123').trim();
+    if (mode === 'subscribe' && token && token === verifyToken && challenge) {
       return res.status(200).send(challenge);
     }
     return res.sendStatus(403);
@@ -30,4 +30,3 @@ export class WhatsappWebhookController {
     return res.sendStatus(200);
   }
 }
-
