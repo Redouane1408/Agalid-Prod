@@ -84,6 +84,7 @@ jobs:
       - name: Deploy with Password (sshpass)
         env:
           SSHPASS: ${{ secrets.PASSWORD }}
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
           # 0. Install sshpass
           sudo apt-get update
@@ -126,10 +127,21 @@ jobs:
                 continue
             fi
 
+            echo "📤 Uploading production env file for Docker Compose..."
+            if sshpass -e ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/agalid/infra" &&
+               sshpass -e scp -P $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no production.env $SSH_USER@$SSH_HOST:~/agalid/infra/production.env; then
+                echo "✅ infra/production.env uploaded successfully."
+            else
+                echo "⚠️ production env upload failed. Waiting 15s..."
+                sleep 15
+                continue
+            fi
+
             # Step B: Run Remote Script
             echo "▶️ Executing remote commands..."
             sshpass -e ssh -p $SSH_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST 'bash -s' << 'EOF'
               set -e
+              DEPLOY_SHA='${{ github.sha }}'
               # Ensure directory exists
               mkdir -p ~/agalid
               cd ~/agalid
@@ -145,8 +157,8 @@ jobs:
                 git init
                 # Use GITHUB_TOKEN for authentication
                 git remote add origin https://oauth2:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-                git fetch origin
-                git checkout -f main
+                git fetch --prune origin
+                git checkout -B main origin/main
                 git branch --set-upstream-to=origin/main main
                 
                 # Restore .env
@@ -155,15 +167,20 @@ jobs:
               else
                 echo "📥 Pulling latest changes..."
                 # Reset local changes (like permission changes on deploy.sh) to avoid merge conflicts
-                git reset --hard HEAD
-                git pull origin main
+                git fetch --prune origin
+                git checkout -B main origin/main
               fi
+
+              echo "📌 Deploying commit $DEPLOY_SHA"
+              git reset --hard "$DEPLOY_SHA"
+              git rev-parse --short HEAD
               
               echo "🏗️ Executing deploy.sh..."
               if [ -f "infra/deploy.sh" ]; then
                 chmod +x infra/deploy.sh
                 # Export SSHPASS so deploy.sh can use it for sudo
                 export SSHPASS='${{ secrets.PASSWORD }}'
+                export GIT_COMMIT_SHA="$DEPLOY_SHA"
                 bash infra/deploy.sh
               else
                 echo "❌ Error: infra/deploy.sh not found!"

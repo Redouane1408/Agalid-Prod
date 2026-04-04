@@ -17,6 +17,8 @@ fi
 # 2. Setup Environment
 echo "Setting up environment..."
 
+mkdir -p infra
+
 # Stop conflicting host services (Apache/Nginx) that hog Port 80
 echo "Stopping potential conflicting web servers on host..."
 if systemctl is-active --quiet apache2; then
@@ -40,7 +42,8 @@ echo "$SSHPASS" | sudo -S ufw status
 
 if [ -f ".env" ]; then
     echo "Using existing .env file (likely injected by CI)"
-    
+    cp .env infra/production.env
+    echo "Synced .env to infra/production.env"
 elif [ -f "infra/production.env" ]; then
     cp infra/production.env .env
     echo "Loaded configuration from infra/production.env"
@@ -71,13 +74,14 @@ fi
 
 if groups $USER | grep &>/dev/null 'docker'; then
     # User is in docker group
-    $DOWN_CMD
-    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
+    $DOWN_CMD --remove-orphans
+    $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
 else
     # User needs sudo
     echo "User not in docker group, using sudo..."
-    echo "$SSHPASS" | sudo -S $DOWN_CMD
-    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build
+    echo "$SSHPASS" | sudo -S $DOWN_CMD --remove-orphans
+    echo "$SSHPASS" | sudo -S $DOCKER_COMPOSE_CMD -f infra/docker-compose.prod.yml up -d --build --force-recreate --remove-orphans
 fi
 
+echo "Deployed git commit: ${GIT_COMMIT_SHA:-unknown}"
 echo "Deployment complete! Check status with: docker compose -f infra/docker-compose.prod.yml ps"
