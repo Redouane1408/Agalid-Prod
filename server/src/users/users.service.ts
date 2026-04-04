@@ -10,21 +10,43 @@ export class UsersService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   async onModuleInit() {
-    const count = await this.prisma.user.count();
-    if (count === 0) {
-      this.logger.log('No users found. Seeding initial admin user...');
+    const email = 'admin@agalid.com';
+    const password = process.env.ADMIN_PASSWORD || 'admin123';
+    const forceReset = (process.env.FORCE_ADMIN_PASSWORD || '').toLowerCase() === 'true';
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (!existing) {
+      this.logger.log('Admin user not found. Creating initial admin user...');
       const salt = await bcrypt.genSalt();
-      const hashedPassword = await bcrypt.hash('admin123', salt);
-      
+      const hashedPassword = await bcrypt.hash(password, salt);
       await this.prisma.user.create({
         data: {
-          email: 'admin@agalid.com',
+          email,
           password: hashedPassword,
           name: 'Admin User',
           role: 'ADMIN',
         },
       });
-      this.logger.log('Admin user created: admin@agalid.com / admin123');
+      this.logger.log(`Admin user created: ${email}`);
+      return;
+    }
+
+    if (existing.role !== 'ADMIN') {
+      await this.prisma.user.update({
+        where: { email },
+        data: { role: 'ADMIN' },
+      });
+      this.logger.log(`User promoted to ADMIN: ${email}`);
+    }
+
+    if (forceReset) {
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(password, salt);
+      await this.prisma.user.update({
+        where: { email },
+        data: { password: hashedPassword },
+      });
+      this.logger.log(`Admin password reset: ${email}`);
     }
   }
 
