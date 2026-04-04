@@ -131,7 +131,11 @@ jobs:
                 key = sanitize_key(m3.group(1))
                 if key:
                   line = f"{key}={m3.group(2)}"
-            cleaned_lines.append(line)
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and ("=" not in line) and (":" not in line):
+              cleaned_lines.append(f"# {stripped}")
+            else:
+              cleaned_lines.append(line)
 
           p.write_text("\n".join(cleaned_lines).rstrip("\n") + "\n", encoding="utf-8")
 
