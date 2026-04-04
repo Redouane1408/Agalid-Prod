@@ -191,6 +191,40 @@ jobs:
                 exit 1
               fi
               echo "✅ Remote script completed successfully!"
+
+              if docker compose version >/dev/null 2>&1; then
+                DC="docker compose"
+              elif command -v docker-compose >/dev/null 2>&1; then
+                DC="docker-compose"
+              else
+                echo "❌ Docker Compose not found on server"
+                exit 1
+              fi
+
+              echo "🔎 Remote verification"
+              echo "Commit on server: $(git rev-parse --short HEAD)"
+              $DC -f infra/docker-compose.prod.yml ps
+              $DC -f infra/docker-compose.prod.yml images
+
+              FRONT_ID=$($DC -f infra/docker-compose.prod.yml ps -q frontend || true)
+              if [ -n "$FRONT_ID" ]; then
+                echo "Frontend container: $FRONT_ID"
+                docker inspect -f 'Image={{.Image}} Created={{.Created}}' "$FRONT_ID" || true
+                docker exec "$FRONT_ID" sh -lc 'ls -la /usr/share/nginx/html | head -n 50; echo "----- index.html (top) -----"; head -n 30 /usr/share/nginx/html/index.html' || true
+              else
+                echo "⚠️ No frontend container found"
+              fi
+
+              echo "----- localhost headers -----"
+              if command -v curl >/dev/null 2>&1; then
+                curl -sI http://127.0.0.1/ | head -n 30 || true
+                echo "----- localhost html (top) -----"
+                curl -s http://127.0.0.1/ | head -n 30 || true
+              elif command -v wget >/dev/null 2>&1; then
+                wget -qSO- http://127.0.0.1/ 2>&1 | head -n 60 || true
+              else
+                echo "⚠️ curl/wget not found to verify localhost"
+              fi
           EOF
             
             if [ $? -eq 0 ]; then
@@ -247,3 +281,14 @@ jobs:
           done
           echo "❌ No health endpoint responded with 200"
           exit 1
+
+      - name: Post-deploy Frontend Check
+        env:
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL }}
+        run: |
+          set -e
+          url="${PUBLIC_URL%/}/"
+          echo "🔎 Fetching frontend: $url"
+          curl -k -sI "$url" | head -n 40 || true
+          echo "----- html (top) -----"
+          curl -k -s "$url" | head -n 40 || true
